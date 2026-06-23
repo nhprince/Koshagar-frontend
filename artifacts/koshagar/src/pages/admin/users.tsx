@@ -56,7 +56,7 @@ function loadUsers(): MockUser[] {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return parsed.map((u: MockUser) => ({ storageQuotaGB: 10, ...u }));
+      return parsed.map((u: MockUser) => ({ ...u, storageQuotaGB: (u as MockUser).storageQuotaGB ?? 10 }));
     }
   } catch {}
   return DEFAULT_USERS;

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useListFiles, FileItem } from "@workspace/api-client-react";
+import { useListFiles, FileItem, getListFilesQueryKey } from "@workspace/api-client-react";
 import { FileGrid, ViewMode } from "@/components/drive/file-grid";
 import { LayoutGrid, List, Loader2, Search as SearchIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -24,9 +24,10 @@ export default function Search() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  const searchParams = { search: debouncedQuery || undefined };
   const { data, isLoading } = useListFiles(
-    { search: debouncedQuery || undefined },
-    { query: { enabled: debouncedQuery.length > 0 } }
+    searchParams,
+    { query: { queryKey: getListFilesQueryKey(searchParams), enabled: debouncedQuery.length > 0 } }
   );
 
   const items = [...(data?.folders || []), ...(data?.files || [])];

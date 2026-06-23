@@ -191,10 +191,10 @@ export default function AdminAnalytics() {
             {stats && (
               <div className="grid grid-cols-3 gap-4">
                 <div className="glass-card rounded-2xl border border-white/5 p-5 text-center">
-                  <p className="text-3xl font-bold text-white">{((stats.usedStorageBytes / stats.totalStorageBytes) * 100).toFixed(1)}%</p>
+                  <p className="text-3xl font-bold text-white">{stats.totalStorageBytes > 0 ? ((stats.totalStorageBytes / (stats.totalUsers * 10 * 1024 ** 3)) * 100).toFixed(1) : "0"}%</p>
                   <p className="text-sm text-muted-foreground mt-1">Storage utilization</p>
                   <div className="h-1.5 bg-white/8 rounded-full mt-3 overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary to-violet-400 rounded-full" style={{ width: `${(stats.usedStorageBytes / stats.totalStorageBytes) * 100}%` }} />
+                    <div className="h-full bg-gradient-to-r from-primary to-violet-400 rounded-full" style={{ width: `${Math.min(100, stats.totalUsers > 0 ? (stats.totalStorageBytes / (stats.totalUsers * 10 * 1024 ** 3)) * 100 : 0)}%` }} />
                   </div>
                 </div>
                 <div className="glass-card rounded-2xl border border-white/5 p-5 text-center">
@@ -205,7 +205,7 @@ export default function AdminAnalytics() {
                 </div>
                 <div className="glass-card rounded-2xl border border-white/5 p-5 text-center">
                   <p className="text-3xl font-bold text-white">
-                    {stats.totalUsers > 0 ? formatBytes(stats.usedStorageBytes / stats.totalUsers) : "0 B"}
+                    {stats.totalUsers > 0 ? formatBytes(stats.totalStorageBytes / stats.totalUsers) : "0 B"}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">Avg storage per user</p>
                 </div>

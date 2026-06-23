@@ -6,12 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface ShareStats {
-  viewCount: number;
-  downloadCount: number;
+export interface ShareUpdateInput {
   allowDownload?: boolean;
   /** @nullable */
   expiresAt?: string | null;
-  hasPassword?: boolean;
-  createdAt?: string;
+  /** @nullable */
+  password?: string | null;
 }

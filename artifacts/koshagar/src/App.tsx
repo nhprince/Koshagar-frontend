@@ -1,10 +1,11 @@
 import React, { Suspense } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./contexts/auth";
 import NotFound from "@/pages/not-found";
+import DriveLayout from "./components/layout/drive-layout";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -15,9 +16,15 @@ const queryClient = new QueryClient({
   },
 });
 
-const PageLoader = (
+const FullPageLoader = (
   <div className="min-h-screen w-full flex items-center justify-center bg-background">
     <div className="w-7 h-7 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+  </div>
+);
+
+const ContentLoader = (
+  <div className="flex items-center justify-center h-full min-h-[60vh]">
+    <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
   </div>
 );
 
@@ -25,7 +32,6 @@ const Landing = React.lazy(() => import("./pages/landing"));
 const Login = React.lazy(() => import("./pages/login"));
 const Register = React.lazy(() => import("./pages/register"));
 const ForgotPassword = React.lazy(() => import("./pages/forgot-password"));
-const DriveLayout = React.lazy(() => import("./components/layout/drive-layout"));
 
 const Drive = React.lazy(() => import("./pages/drive/index"));
 const Folder = React.lazy(() => import("./pages/drive/folder"));
@@ -43,56 +49,78 @@ const AdminAnalytics = React.lazy(() => import("./pages/admin/analytics"));
 const AdminHealth = React.lazy(() => import("./pages/admin/health"));
 const PublicShare = React.lazy(() => import("./pages/share/index"));
 
-function Router() {
+// DriveSection renders a stable DriveLayout wrapper so the sidebar never
+// unmounts when switching between drive tabs. Only inner page content changes.
+function DriveSection() {
   return (
-    <Suspense fallback={PageLoader}>
+    <DriveLayout>
       <Switch>
-        <Route path="/" component={Landing} />
-        <Route path="/login" component={Login} />
-        <Route path="/register" component={Register} />
-        <Route path="/forgot-password" component={ForgotPassword} />
-
-        <Route path="/drive">
-          <DriveLayout><Drive /></DriveLayout>
-        </Route>
         <Route path="/drive/folder/:id">
-          {params => <DriveLayout><Folder id={Number(params.id)} /></DriveLayout>}
+          {(params: { id: string }) => (
+            <Suspense fallback={ContentLoader}>
+              <Folder id={Number(params.id)} />
+            </Suspense>
+          )}
         </Route>
         <Route path="/drive/starred">
-          <DriveLayout><Starred /></DriveLayout>
+          <Suspense fallback={ContentLoader}><Starred /></Suspense>
         </Route>
         <Route path="/drive/recent">
-          <DriveLayout><Recent /></DriveLayout>
+          <Suspense fallback={ContentLoader}><Recent /></Suspense>
         </Route>
         <Route path="/drive/trash">
-          <DriveLayout><Trash /></DriveLayout>
+          <Suspense fallback={ContentLoader}><Trash /></Suspense>
         </Route>
         <Route path="/drive/shared">
-          <DriveLayout><Shared /></DriveLayout>
+          <Suspense fallback={ContentLoader}><Shared /></Suspense>
         </Route>
         <Route path="/drive/search">
-          <DriveLayout><Search /></DriveLayout>
+          <Suspense fallback={ContentLoader}><Search /></Suspense>
         </Route>
         <Route path="/drive/activity">
-          <DriveLayout><Activity /></DriveLayout>
+          <Suspense fallback={ContentLoader}><Activity /></Suspense>
         </Route>
         <Route path="/drive/settings">
-          <DriveLayout><Settings /></DriveLayout>
+          <Suspense fallback={ContentLoader}><Settings /></Suspense>
         </Route>
-
-        <Route path="/admin" component={AdminOverview} />
-        <Route path="/admin/users" component={AdminUsers} />
-        <Route path="/admin/analytics" component={AdminAnalytics} />
-        <Route path="/admin/health" component={AdminHealth} />
-
-        <Route path="/s/:token">
-          {params => <PublicShare token={params.token} />}
+        <Route>
+          <Suspense fallback={ContentLoader}><Drive /></Suspense>
         </Route>
-
-        <Route component={NotFound} />
       </Switch>
-    </Suspense>
+    </DriveLayout>
   );
+}
+
+// Location-based router: for drive paths, always renders DriveSection at the
+// same position in the tree so React never unmounts/remounts the sidebar.
+function Router() {
+  const [location] = useLocation();
+
+  // Non-drive routes — use a Switch for exact matching
+  if (!location.startsWith("/drive")) {
+    return (
+      <Suspense fallback={FullPageLoader}>
+        <Switch>
+          <Route path="/" component={Landing} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
+          <Route path="/forgot-password" component={ForgotPassword} />
+          <Route path="/admin" component={AdminOverview} />
+          <Route path="/admin/users" component={AdminUsers} />
+          <Route path="/admin/analytics" component={AdminAnalytics} />
+          <Route path="/admin/health" component={AdminHealth} />
+          <Route path="/s/:token">
+            {(params: { token: string }) => <PublicShare token={params.token} />}
+          </Route>
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
+    );
+  }
+
+  // Drive routes — DriveSection is always at this same tree position,
+  // so React preserves it (and the sidebar) across all /drive/* navigations.
+  return <DriveSection />;
 }
 
 function App() {

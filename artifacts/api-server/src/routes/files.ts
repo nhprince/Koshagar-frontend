@@ -134,7 +134,7 @@ router.get("/files/:id", requireAuth, async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  res.json(toFileItem(file));
+  res.json({ ...toFileItem(file), dataUrl: file.dataUrl ?? null });
 });
 
 router.patch("/files/:id", requireAuth, async (req, res) => {

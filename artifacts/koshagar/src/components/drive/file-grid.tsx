@@ -15,7 +15,7 @@ export function FileGrid({
   viewMode: ViewMode;
   actions: FileCardActions;
 }) {
-  if (items.length === 0) return null;
+  if (!Array.isArray(items) || items.length === 0) return null;
 
   if (viewMode === "list") {
     return (

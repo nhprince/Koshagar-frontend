@@ -22,6 +22,8 @@ export interface FileItem {
   shareToken?: string | null;
   /** @nullable */
   thumbnailUrl?: string | null;
+  /** @nullable */
+  dataUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   /** @nullable */

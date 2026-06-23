@@ -448,6 +448,31 @@ paths:
       responses:
         "204":
           description: Deleted
+    patch:
+      operationId: updateShare
+      tags: [share]
+      summary: Update share link settings
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShareUpdateInput"
+      responses:
+        "200":
+          description: Updated share link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShareLink"
+        "404":
+          description: Not found
 
   /share/{token}/stats:
     get:
@@ -642,6 +667,8 @@ components:
           type: ["string", "null"]
         thumbnailUrl:
           type: ["string", "null"]
+        dataUrl:
+          type: ["string", "null"]
         createdAt:
           type: string
         updatedAt:
@@ -783,6 +810,16 @@ components:
         requiresPassword:
           type: boolean
 
+    ShareUpdateInput:
+      type: object
+      properties:
+        allowDownload:
+          type: boolean
+        expiresAt:
+          type: ["string", "null"]
+        password:
+          type: ["string", "null"]
+
     ShareStats:
       type: object
       required: [viewCount, downloadCount]
@@ -791,6 +828,14 @@ components:
           type: integer
         downloadCount:
           type: integer
+        allowDownload:
+          type: boolean
+        expiresAt:
+          type: ["string", "null"]
+        hasPassword:
+          type: boolean
+        createdAt:
+          type: string
 
     ActivityEntry:
       type: object

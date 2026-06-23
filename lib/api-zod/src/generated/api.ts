@@ -105,6 +105,7 @@ export const ListFilesResponse = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -121,6 +122,7 @@ export const ListFilesResponse = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -143,6 +145,7 @@ export const GetRecentFilesResponseItem = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -165,6 +168,7 @@ export const GetSharedFilesResponseItem = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -203,6 +207,7 @@ export const GetFileResponse = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -232,6 +237,7 @@ export const UpdateFileResponse = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -269,6 +275,7 @@ export const StarFileResponse = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -298,6 +305,7 @@ export const TrashFileResponse = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -327,6 +335,7 @@ export const MoveFileResponse = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -362,6 +371,7 @@ export const GetFolderResponse = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -404,6 +414,7 @@ export const ViewPublicShareResponse = zod.object({
   "ownerId": zod.number(),
   "shareToken": zod.string().nullish(),
   "thumbnailUrl": zod.string().nullish(),
+  "dataUrl": zod.string().nullish(),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
   "trashedAt": zod.string().nullish()
@@ -424,6 +435,32 @@ export const DeleteShareParams = zod.object({
 
 
 /**
+ * @summary Update share link settings
+ */
+export const UpdateShareParams = zod.object({
+  "token": zod.coerce.string()
+})
+
+export const UpdateShareBody = zod.object({
+  "allowDownload": zod.boolean().optional(),
+  "expiresAt": zod.string().nullish(),
+  "password": zod.string().nullish()
+})
+
+export const UpdateShareResponse = zod.object({
+  "id": zod.number(),
+  "token": zod.string(),
+  "fileId": zod.number(),
+  "password": zod.string().nullish(),
+  "expiresAt": zod.string().nullish(),
+  "allowDownload": zod.boolean(),
+  "viewCount": zod.number().optional(),
+  "downloadCount": zod.number().optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
  * @summary Get view/download stats for a share link
  */
 export const GetShareStatsParams = zod.object({
@@ -432,7 +469,11 @@ export const GetShareStatsParams = zod.object({
 
 export const GetShareStatsResponse = zod.object({
   "viewCount": zod.number(),
-  "downloadCount": zod.number()
+  "downloadCount": zod.number(),
+  "allowDownload": zod.boolean().optional(),
+  "expiresAt": zod.string().nullish(),
+  "hasPassword": zod.boolean().optional(),
+  "createdAt": zod.string().optional()
 })
 
 

@@ -4,12 +4,19 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FolderOpen, Star, Clock, Trash2, Link as LinkIcon,
   Bell, Upload, Settings, Activity, Search as SearchIcon,
-  Shield,
+  Shield, LogOut, ChevronUp,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
-import { useGetStorageUsage } from "@workspace/api-client-react";
+import { useGetStorageUsage, useLogout } from "@workspace/api-client-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { UploadModal } from "../modals/upload-modal";
 import { NotificationsPanel, useNotifications } from "../notifications/notifications-panel";
 
@@ -28,6 +35,7 @@ export default function DriveLayout({ children }: { children?: React.ReactNode }
   const [, setLocation] = useLocation();
   const [uploadOpen, setUploadOpen] = React.useState(false);
   const notifs = useNotifications();
+  const [location] = useLocation();
 
   React.useEffect(() => {
     if (!isLoading && !user) {
@@ -48,7 +56,7 @@ export default function DriveLayout({ children }: { children?: React.ReactNode }
           <main className="flex-1 overflow-y-auto px-[clamp(1rem,3vw,2.5rem)] pb-6 z-0 h-full">
             <AnimatePresence mode="wait">
               <motion.div
-                key={typeof window !== "undefined" ? window.location.pathname : ""}
+                key={location}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
@@ -67,8 +75,15 @@ export default function DriveLayout({ children }: { children?: React.ReactNode }
 }
 
 function Sidebar({ user }: { user: { name?: string | null; email?: string | null; avatarUrl?: string | null; role?: string | null } }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { data: storage } = useGetStorageUsage();
+  const logoutMutation = useLogout();
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => { window.location.href = "/login"; },
+    });
+  };
 
   const navItems = [
     { href: "/drive", label: "My Drive", icon: FolderOpen },
@@ -86,7 +101,7 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
     "from-primary to-violet-400";
 
   return (
-    <aside className="w-[clamp(11rem,14vw,15rem)] flex-shrink-0 flex-col z-20 hidden md:flex border-r border-white/5 bg-background/60 backdrop-blur-2xl">
+    <aside className="w-[clamp(11rem,14vw,15rem)] h-full flex-shrink-0 flex-col z-20 hidden md:flex border-r border-white/5 bg-background/60 backdrop-blur-2xl overflow-hidden">
       <div className="h-[clamp(3.5rem,5vh,4rem)] flex items-center px-4 border-b border-white/5 flex-shrink-0">
         <Link href="/drive" className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow-md shadow-primary/25 flex-shrink-0">
@@ -98,7 +113,7 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
         </Link>
       </div>
 
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 min-h-0 px-2 py-3 space-y-0.5 overflow-y-auto">
         <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest px-2 mb-2">Drive</p>
         {navItems.map((item) => {
           const isActive =
@@ -142,7 +157,7 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
         )}
       </nav>
 
-      <div className="px-3 py-4 border-t border-white/5 space-y-3 flex-shrink-0">
+      <div className="px-3 py-3 border-t border-white/5 space-y-2.5 flex-shrink-0">
         {storage && (
           <div className="px-1">
             <div className="flex items-center justify-between text-[11px] mb-1.5">
@@ -162,21 +177,42 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
           </div>
         )}
 
-        <Link href="/drive/settings">
-          <div className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
-            <Avatar className="w-7 h-7 border border-white/10 flex-shrink-0">
-              <AvatarImage src={user?.avatarUrl || ""} />
-              <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
-                {user?.name?.charAt(0)?.toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold text-white truncate leading-none">{user?.name}</p>
-              <p className="text-[10px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
+              <Avatar className="w-7 h-7 border border-white/10 flex-shrink-0">
+                <AvatarImage src={user?.avatarUrl || ""} />
+                <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+                  {user?.name?.charAt(0)?.toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold text-white truncate leading-none">{user?.name}</p>
+                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
+              </div>
+              <ChevronUp className="w-3 h-3 text-muted-foreground/50 group-hover:text-white/60 transition-colors flex-shrink-0" />
             </div>
-            <Settings className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-white/70 transition-colors flex-shrink-0" />
-          </div>
-        </Link>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="top"
+            align="start"
+            className="w-52 mb-1"
+            style={{ background: "hsl(var(--card))" }}
+          >
+            <DropdownMenuItem onClick={() => setLocation("/drive/settings")} className="cursor-pointer">
+              <Settings className="w-4 h-4 mr-2" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="text-destructive focus:text-destructive cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              {logoutMutation.isPending ? "Signing out…" : "Sign Out"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </aside>
   );

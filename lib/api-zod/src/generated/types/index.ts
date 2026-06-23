@@ -33,6 +33,7 @@ export * from './registerInput';
 export * from './shareInput';
 export * from './shareLink';
 export * from './shareStats';
+export * from './shareUpdateInput';
 export * from './starInput';
 export * from './storageUsage';
 export * from './trashInput';

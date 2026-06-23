@@ -71,6 +71,8 @@ export interface FileItem {
   shareToken?: string | null;
   /** @nullable */
   thumbnailUrl?: string | null;
+  /** @nullable */
+  dataUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   /** @nullable */
@@ -157,9 +159,22 @@ export interface PublicShareView {
   requiresPassword?: boolean;
 }
 
+export interface ShareUpdateInput {
+  allowDownload?: boolean;
+  /** @nullable */
+  expiresAt?: string | null;
+  /** @nullable */
+  password?: string | null;
+}
+
 export interface ShareStats {
   viewCount: number;
   downloadCount: number;
+  allowDownload?: boolean;
+  /** @nullable */
+  expiresAt?: string | null;
+  hasPassword?: boolean;
+  createdAt?: string;
 }
 
 export type ActivityEntryAction = typeof ActivityEntryAction[keyof typeof ActivityEntryAction];

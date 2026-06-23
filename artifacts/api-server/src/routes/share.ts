@@ -6,6 +6,10 @@ import crypto from "crypto";
 
 const router = Router();
 
+function hashSharePassword(password: string) {
+  return crypto.createHash("sha256").update(password + "koshagar_share_salt").digest("hex");
+}
+
 function toShareLink(share: typeof sharesTable.$inferSelect) {
   return {
     id: share.id,
@@ -34,10 +38,13 @@ router.post("/share", requireAuth, async (req, res) => {
     return;
   }
 
+  // If file already has a share, delete it first (replace)
+  if (file.shareToken) {
+    await db.delete(sharesTable).where(eq(sharesTable.token, file.shareToken));
+  }
+
   const token = crypto.randomBytes(16).toString("hex");
-  const passwordHash = password
-    ? crypto.createHash("sha256").update(password + "koshagar_share_salt").digest("hex")
-    : null;
+  const passwordHash = password ? hashSharePassword(password) : null;
 
   const [share] = await db.insert(sharesTable).values({
     token,
@@ -91,6 +98,7 @@ router.get("/share/:token", async (req, res) => {
       ownerId: file.ownerId,
       shareToken: file.shareToken ?? null,
       thumbnailUrl: file.thumbnailUrl ?? null,
+      dataUrl: null,
       createdAt: file.createdAt.toISOString(),
       updatedAt: file.updatedAt.toISOString(),
       trashedAt: file.trashedAt?.toISOString() ?? null,
@@ -100,6 +108,33 @@ router.get("/share/:token", async (req, res) => {
     expiresAt: share.expiresAt?.toISOString() ?? null,
     requiresPassword: false,
   });
+});
+
+router.patch("/share/:token", requireAuth, async (req, res) => {
+  const token = req.params.token as string;
+  const { allowDownload, expiresAt, password } = req.body;
+
+  const [share] = await db.select().from(sharesTable)
+    .where(and(eq(sharesTable.token, token), eq(sharesTable.ownerId, req.userId!)));
+
+  if (!share) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  const updates: Partial<typeof sharesTable.$inferInsert> = {};
+  if (allowDownload !== undefined) updates.allowDownload = allowDownload;
+  if (expiresAt !== undefined) updates.expiresAt = expiresAt ? new Date(expiresAt) : null;
+  if (password !== undefined) {
+    updates.passwordHash = password ? hashSharePassword(password) : null;
+  }
+
+  const [updated] = await db.update(sharesTable)
+    .set(updates)
+    .where(eq(sharesTable.token, token))
+    .returning();
+
+  res.json(toShareLink(updated));
 });
 
 router.delete("/share/:token", requireAuth, async (req, res) => {
@@ -127,7 +162,14 @@ router.get("/share/:token/stats", requireAuth, async (req, res) => {
     return;
   }
 
-  res.json({ viewCount: share.viewCount, downloadCount: share.downloadCount });
+  res.json({
+    viewCount: share.viewCount,
+    downloadCount: share.downloadCount,
+    allowDownload: share.allowDownload,
+    expiresAt: share.expiresAt?.toISOString() ?? null,
+    hasPassword: !!share.passwordHash,
+    createdAt: share.createdAt.toISOString(),
+  });
 });
 
 export default router;

@@ -42,6 +42,7 @@ import type {
   ShareInput,
   ShareLink,
   ShareStats,
+  ShareUpdateInput,
   StarInput,
   StorageUsage,
   TrashInput,
@@ -1676,6 +1677,78 @@ export const useDeleteShare = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteShareMutationOptions(options));
+    }
+
+export const getUpdateShareUrl = (token: string,) => {
+
+
+
+
+  return `/api/share/${token}`
+}
+
+/**
+ * @summary Update share link settings
+ */
+export const updateShare = async (token: string,
+    shareUpdateInput: ShareUpdateInput, options?: RequestInit): Promise<ShareLink> => {
+
+  return customFetch<ShareLink>(getUpdateShareUrl(token),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      shareUpdateInput,)
+  }
+);}
+
+
+
+
+export const getUpdateShareMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShare>>, TError,{token: string;data: BodyType<ShareUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateShare>>, TError,{token: string;data: BodyType<ShareUpdateInput>}, TContext> => {
+
+const mutationKey = ['updateShare'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateShare>>, {token: string;data: BodyType<ShareUpdateInput>}> = (props) => {
+          const {token,data} = props ?? {};
+
+          return  updateShare(token,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateShareMutationResult = NonNullable<Awaited<ReturnType<typeof updateShare>>>
+    export type UpdateShareMutationBody = BodyType<ShareUpdateInput>
+    export type UpdateShareMutationError = ErrorType<void>
+
+    /**
+ * @summary Update share link settings
+ */
+export const useUpdateShare = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateShare>>, TError,{token: string;data: BodyType<ShareUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateShare>>,
+        TError,
+        {token: string;data: BodyType<ShareUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateShareMutationOptions(options));
     }
 
 export const getGetShareStatsUrl = (token: string,) => {
