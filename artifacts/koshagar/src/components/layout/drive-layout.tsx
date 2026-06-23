@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   FolderOpen, Star, Clock, Trash2, Link as LinkIcon,
   Bell, Upload, Settings, Activity, Search as SearchIcon,
-  Shield, LogOut, ChevronUp,
+  Shield, LogOut, ChevronUp, HardDrive, AlertTriangle,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
-import { useGetStorageUsage, useLogout } from "@workspace/api-client-react";
+import { useGetStorageUsage, useLogout, getGetStorageUsageQueryKey } from "@workspace/api-client-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -76,7 +76,10 @@ export default function DriveLayout({ children }: { children?: React.ReactNode }
 
 function Sidebar({ user }: { user: { name?: string | null; email?: string | null; avatarUrl?: string | null; role?: string | null } }) {
   const [location, setLocation] = useLocation();
-  const { data: storage } = useGetStorageUsage();
+  const { data: storage } = useGetStorageUsage({
+    query: { queryKey: getGetStorageUsageQueryKey(), staleTime: 0 },
+    request: { cache: "no-store" },
+  });
   const logoutMutation = useLogout();
 
   const handleLogout = () => {
@@ -94,7 +97,14 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
     { href: "/drive/trash", label: "Trash", icon: Trash2 },
   ];
 
-  const usedPct = storage ? (storage.usedBytes / storage.totalBytes) * 100 : 0;
+  // Bullet-proof arithmetic: guard against undefined/null/NaN in stale cache responses
+  const QUOTA = 10 * 1024 * 1024 * 1024;
+  const rawUsed = Number(storage?.usedBytes ?? 0);
+  const rawTotal = Number(storage?.totalBytes ?? 0);
+  const effectiveTotalBytes = rawTotal > 0 && isFinite(rawTotal) ? rawTotal : QUOTA;
+  const effectiveUsedBytes = isFinite(rawUsed) ? rawUsed : 0;
+  const rawPct = (effectiveUsedBytes / effectiveTotalBytes) * 100;
+  const usedPct = isFinite(rawPct) ? rawPct : 0;
   const storageColor =
     usedPct > 90 ? "from-red-500 to-rose-400" :
     usedPct > 70 ? "from-amber-500 to-yellow-400" :
@@ -158,24 +168,89 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
       </nav>
 
       <div className="px-3 py-3 border-t border-white/5 space-y-2.5 flex-shrink-0">
-        {storage && (
-          <div className="px-1">
-            <div className="flex items-center justify-between text-[11px] mb-1.5">
-              <span className="text-muted-foreground">Storage</span>
-              <span className="text-white/70 font-medium tabular-nums">
-                {formatBytes(storage.usedBytes)} / {formatBytes(storage.totalBytes)}
-              </span>
+        {/* Storage quota block — always visible; skeleton while loading */}
+        <div className={`px-1.5 py-2 rounded-xl transition-colors ${
+          usedPct > 90 ? "bg-red-500/8 border border-red-500/15" :
+          usedPct > 70 ? "bg-amber-500/8 border border-amber-500/15" :
+          "bg-white/3 border border-white/5"
+        }`}>
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5">
+              <HardDrive className={`w-3 h-3 flex-shrink-0 ${
+                usedPct > 90 ? "text-red-400" :
+                usedPct > 70 ? "text-amber-400" :
+                "text-muted-foreground"
+              }`} />
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Storage</span>
             </div>
-            <div className="h-1 bg-white/8 rounded-full overflow-hidden">
+            {storage ? (
+              <span className={`text-[10px] font-bold tabular-nums ${
+                usedPct > 90 ? "text-red-400" :
+                usedPct > 70 ? "text-amber-400" :
+                "text-white/50"
+              }`}>
+                {usedPct.toFixed(0)}%
+              </span>
+            ) : (
+              <div className="w-6 h-2.5 bg-white/10 rounded animate-pulse" />
+            )}
+          </div>
+
+          {/* Progress bar */}
+          <div className="h-1.5 bg-white/8 rounded-full overflow-hidden mb-2">
+            {storage ? (
               <motion.div
-                className={`h-full rounded-full bg-gradient-to-r ${storageColor}`}
+                className={`h-full rounded-full bg-gradient-to-r ${storageColor} ${usedPct > 90 ? "animate-pulse" : ""}`}
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, usedPct)}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
+                transition={{ duration: 0.9, ease: [0.25, 0.46, 0.45, 0.94] }}
               />
-            </div>
+            ) : (
+              <div className="h-full w-2/5 bg-white/12 rounded-full animate-pulse" />
+            )}
           </div>
-        )}
+
+          {/* Used / Total */}
+          {storage ? (
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] font-medium tabular-nums ${
+                usedPct > 90 ? "text-red-400" :
+                usedPct > 70 ? "text-amber-400" :
+                "text-white/60"
+              }`}>
+                {formatBytes(effectiveUsedBytes)} used
+              </span>
+              <span className="text-[10px] text-muted-foreground/50 tabular-nums">
+                {formatBytes(effectiveTotalBytes)}
+              </span>
+            </div>
+          ) : (
+            <div className="flex justify-between">
+              <div className="w-14 h-2.5 bg-white/10 rounded animate-pulse" />
+              <div className="w-10 h-2.5 bg-white/10 rounded animate-pulse" />
+            </div>
+          )}
+
+          {/* Warning / danger text */}
+          {storage && usedPct > 90 && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <AlertTriangle className="w-2.5 h-2.5 text-red-400 flex-shrink-0" />
+              <p className="text-[9px] text-red-400 font-medium">Storage nearly full</p>
+            </div>
+          )}
+          {storage && usedPct > 70 && usedPct <= 90 && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <AlertTriangle className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />
+              <p className="text-[9px] text-amber-400 font-medium">Running low on space</p>
+            </div>
+          )}
+          {storage && storage.fileCount > 0 && usedPct <= 70 && (
+            <p className="text-[9px] text-muted-foreground/40 mt-1 tabular-nums">
+              {storage.fileCount} file{storage.fileCount !== 1 ? "s" : ""}
+            </p>
+          )}
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
