@@ -6,9 +6,21 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "./contexts/auth";
 import NotFound from "@/pages/not-found";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+    },
+  },
+});
 
-// Lazy load pages
+const PageLoader = (
+  <div className="min-h-screen w-full flex items-center justify-center bg-background">
+    <div className="w-7 h-7 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+  </div>
+);
+
 const Landing = React.lazy(() => import("./pages/landing"));
 const Login = React.lazy(() => import("./pages/login"));
 const Register = React.lazy(() => import("./pages/register"));
@@ -24,22 +36,20 @@ const Search = React.lazy(() => import("./pages/drive/search"));
 const Activity = React.lazy(() => import("./pages/drive/activity"));
 const Settings = React.lazy(() => import("./pages/drive/settings"));
 
-const Admin = React.lazy(() => import("./pages/admin/index"));
+const AdminOverview = React.lazy(() => import("./pages/admin/index"));
+const AdminUsers = React.lazy(() => import("./pages/admin/users"));
+const AdminAnalytics = React.lazy(() => import("./pages/admin/analytics"));
+const AdminHealth = React.lazy(() => import("./pages/admin/health"));
 const PublicShare = React.lazy(() => import("./pages/share/index"));
 
 function Router() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen w-full flex items-center justify-center bg-background">
-        <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-    }>
+    <Suspense fallback={PageLoader}>
       <Switch>
         <Route path="/" component={Landing} />
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
-        
-        {/* Drive App Routes */}
+
         <Route path="/drive">
           <DriveLayout><Drive /></DriveLayout>
         </Route>
@@ -68,7 +78,11 @@ function Router() {
           <DriveLayout><Settings /></DriveLayout>
         </Route>
 
-        <Route path="/admin" component={Admin} />
+        <Route path="/admin" component={AdminOverview} />
+        <Route path="/admin/users" component={AdminUsers} />
+        <Route path="/admin/analytics" component={AdminAnalytics} />
+        <Route path="/admin/health" component={AdminHealth} />
+
         <Route path="/s/:token">
           {params => <PublicShare token={params.token} />}
         </Route>
@@ -80,9 +94,8 @@ function Router() {
 }
 
 function App() {
-  // Enforce dark mode
   React.useEffect(() => {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.add("dark");
   }, []);
 
   return (
@@ -93,7 +106,15 @@ function App() {
             <Router />
           </AuthProvider>
         </WouterRouter>
-        <Toaster theme="dark" className="glass-card" />
+        <Toaster
+          theme="dark"
+          position="top-right"
+          toastOptions={{
+            classNames: {
+              toast: "glass-card border-white/10 rounded-xl text-sm",
+            },
+          }}
+        />
       </TooltipProvider>
     </QueryClientProvider>
   );

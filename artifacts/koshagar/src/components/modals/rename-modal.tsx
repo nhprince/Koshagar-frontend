@@ -2,7 +2,7 @@ import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useUpdateFile, useUpdateFolder, getListFilesQueryKey } from "@workspace/api-client-react";
+import { useUpdateFile, getListFilesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Edit2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -27,7 +27,6 @@ export function RenameModal({
 }) {
   const queryClient = useQueryClient();
   const updateFileMutation = useUpdateFile();
-  const updateFolderMutation = useUpdateFolder();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,8 +39,7 @@ export function RenameModal({
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     if (!item) return;
-    const mutation = item.type === "folder" ? updateFolderMutation : updateFileMutation;
-    (mutation as typeof updateFileMutation).mutate(
+    updateFileMutation.mutate(
       { id: item.id, data: { name: values.name } },
       {
         onSuccess: () => {
@@ -54,7 +52,7 @@ export function RenameModal({
     );
   };
 
-  const isPending = updateFileMutation.isPending || updateFolderMutation.isPending;
+  const isPending = updateFileMutation.isPending;
 
   if (!item) return null;
 

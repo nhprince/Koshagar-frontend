@@ -1,7 +1,7 @@
 import React from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useMoveFile, useListFolders, getListFilesQueryKey } from "@workspace/api-client-react";
+import { useMoveFile, useListFiles, getListFilesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FolderInput, Folder, Loader2, Home } from "lucide-react";
 import { toast } from "sonner";
@@ -18,11 +18,11 @@ export function MoveFolderModal({
 }) {
   const queryClient = useQueryClient();
   const moveMutation = useMoveFile();
-  const { data: foldersData } = useListFolders();
+  const { data: filesData } = useListFiles();
   const [selectedFolder, setSelectedFolder] = React.useState<number | null>(null);
   const [selectedLabel, setSelectedLabel] = React.useState("My Drive (root)");
 
-  const folders = foldersData?.folders || [];
+  const folders = filesData?.folders || [];
   const filteredFolders = folders.filter((f) => f.id !== item?.id);
 
   React.useEffect(() => {
