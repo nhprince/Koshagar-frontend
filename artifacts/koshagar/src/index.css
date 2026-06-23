@@ -132,9 +132,9 @@
     --ring: 260 80% 70%;
   }
 
-  /* Fluid root font-size: scales from 16px at 1024px to 20px at 2560px (4K-ready) */
+  /* Fluid root font-size: 16px at 1280px → 24px at 2560px → 32px at 3840px (true 4K scaling) */
   html {
-    font-size: clamp(1rem, 0.75rem + 0.417vw, 1.35rem);
+    font-size: clamp(16px, 0.833vw + 5.33px, 32px);
     scroll-behavior: smooth;
   }
 

@@ -24,6 +24,7 @@ const PageLoader = (
 const Landing = React.lazy(() => import("./pages/landing"));
 const Login = React.lazy(() => import("./pages/login"));
 const Register = React.lazy(() => import("./pages/register"));
+const ForgotPassword = React.lazy(() => import("./pages/forgot-password"));
 const DriveLayout = React.lazy(() => import("./components/layout/drive-layout"));
 
 const Drive = React.lazy(() => import("./pages/drive/index"));
@@ -49,6 +50,7 @@ function Router() {
         <Route path="/" component={Landing} />
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
+        <Route path="/forgot-password" component={ForgotPassword} />
 
         <Route path="/drive">
           <DriveLayout><Drive /></DriveLayout>
