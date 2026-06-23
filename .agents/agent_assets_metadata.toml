@@ -1,0 +1,32 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "E22Li2ui3pZInGBAERn-Y"
+uri = "file://artifacts/koshagar/public/hero-bg.png"
+type = "image"
+title = "Hero abstract glassmorphism background"
+
+[[generated]]
+id = "R3im6YB8w0KWduVBM0DSs"
+uri = "file://artifacts/koshagar/public/feature-folder.png"
+type = "image"
+title = "Glowing folder icon"
+
+[[generated]]
+id = "_2abJItK3jt0fWR8PNMuE"
+uri = "file://artifacts/koshagar/public/feature-vault.png"
+type = "image"
+title = "Glowing vault lock"
+
+[[generated]]
+id = "re1zKmk3vZrS82r-Vwkgi"
+uri = "file://artifacts/koshagar/public/feature-network.png"
+type = "image"
+title = "Collaborative nodes"
+
+[[generated]]
+id = "7IQLzBgfOHxZnzwgiEInG"
+uri = "file://artifacts/koshagar/public/empty-state.png"
+type = "image"
+title = "Empty state illustration"

@@ -1,0 +1,213 @@
+# Koshagar — Frontend Design Prompt for Replit
+
+---
+
+## What You're Building
+
+A full-featured cloud storage web app called **Koshagar** — a Google Drive alternative. The name comes from the Bengali word কোষাগার, meaning *treasury* or *storehouse* — a perfect name for a place where people keep everything valuable to them. Users can upload, organize, preview, share, and manage files. It has multi-user auth, folders, search, trash, sharing links, file previews, activity logs, and an admin panel. The backend API is already built — you're building the complete frontend that connects to it.
+
+---
+
+## The Vibe & Aesthetic
+
+Think **"Linear meets Notion meets a dreamy Japanese stationery shop"** — clean, minimal, and professional at its core, but with a soft, warm personality that makes it feel alive and delightful rather than cold and corporate.
+
+The design language is **soft glassmorphism** — translucent frosted panels, gentle depth, layers that feel like they're floating. Everything has generous rounded corners. Shadows are soft and warm, never harsh. The overall feeling should be: *premium, calm, focused, and just a little magical.*
+
+The app should feel like something you'd pay for, while also feeling approachable and friendly. No sharp edges. No aggressive contrast. Every surface breathes.
+
+---
+
+## Color Palette Direction
+
+**Dark mode is the primary experience.** Light mode is optional but dark is the hero.
+
+The background is a very deep, slightly warm dark — not pure black, more like a deep space navy or dark charcoal with a faint purple undertone. Think the color of a clear night sky just before full dark.
+
+The primary accent is a **soft lavender-to-violet gradient** — the kind of purple that feels digital and dreamy at the same time. Think AI aesthetic but warmer.
+
+Secondary accents are a **soft cyan-teal** for interactive states and a **warm coral-pink** for notifications, errors, and delete actions. These should feel like they glow slightly.
+
+Surfaces (cards, panels, modals) are slightly lighter than the background, with a very subtle frosted glass effect — a touch of transparency with a blur backdrop, outlined by a barely-visible border that catches light like the edge of a glass pane.
+
+Text is soft white — never pure #FFFFFF, slightly cream. Secondary text is muted to about 50–60% opacity of the primary text color.
+
+The overall palette has a premium, dark aesthetic with purple as the soul of the brand.
+
+---
+
+## Typography Feel
+
+The font should be a clean, modern, slightly rounded sans-serif. The kind that feels geometric but friendly — not sterile, not playful, right in the middle. Think clean tech with warmth.
+
+Headings feel confident and spacious — generous letter spacing, never cramped.
+Body text is comfortable and readable — not too small, not too dense.
+File names, folder names, and metadata use a slightly smaller, lighter weight.
+The brand name "Koshagar" in the top-left should have a subtle gradient treatment using the primary accent colors. The name is elegant enough to stand alone as a wordmark — it has a natural visual rhythm with its alternating soft and strong syllables.
+
+---
+
+## Layout & Structure
+
+### Sidebar (always visible on desktop)
+A narrow, elegant left sidebar — not wide, just enough for icons and short labels. It floats slightly off the background surface. Contains:
+- The Koshagar logo/wordmark at the top with a small gem or vault icon — something that evokes a treasury, safe, or precious container. The icon should feel minimal and modern, not literal.
+- Navigation items: My Drive, Starred, Recent, Shared, Trash
+- A storage usage indicator near the bottom — a thin, glowing progress bar that shows used vs total space with a cute label like "2.3 GB used"
+- User avatar and name at the very bottom with a small settings icon
+
+Navigation items have a pill-shaped active state that glows softly in the accent color. Hover states slide in smoothly.
+
+### Top Bar
+A floating topbar with a prominent **search bar** in the center — rounded, soft, with a subtle inner glow when focused. A keyboard shortcut hint (like `⌘K`) appears inside the search bar. On the right: an upload button with a plus icon, a notifications bell, and the user avatar. The topbar has a slight blur backdrop so content scrolls behind it gracefully.
+
+### Main Content Area
+The content area is spacious. Files and folders live here in a grid or list layout depending on user preference. There's a subtle toggle between grid and list view in the top-right of the content area. The grid uses soft cards. The list uses clean rows with hover states.
+
+---
+
+## Page-by-Page Description
+
+### Landing Page
+A full-screen hero with a dark background. A large, bold headline like *"Your files. Anywhere. Free forever."* with a soft gradient on the key words. Beneath it a short subheadline. Two buttons: "Get Started Free" (solid, gradient, glowing) and "See how it works" (ghost/outlined).
+
+Below the hero, a section of floating file cards/mockup showing the app interface — a visual preview that rotates or shifts on scroll (parallax). Then a features section with 3–4 cards: Unlimited Storage, Instant Sharing, Private & Secure, Beautiful Interface. Each card has a small glowing icon. Finally a simple call-to-action section and a minimal footer.
+
+The landing page should feel like a SaaS product landing page for a premium tool, not a student project.
+
+### Login & Register Pages
+Centered card on the dark background. The card has the frosted glass treatment. A soft gradient border or a very faint glow around it. The Koshagar logo at the top of the card — the gem/vault icon above the wordmark, centered, with the gradient treatment. Input fields are rounded, with smooth focus transitions — the border gently lights up in the accent color when focused. The submit button is a full-width gradient button that has a subtle shimmer or pulse animation while loading. Social auth buttons if needed. Toggle between login and register with an animated underline on the tab. Error messages slide in from below the field with a soft shake animation.
+
+### Main File Browser (The Drive View)
+This is the heart of the app. It should feel like a polished desktop app.
+
+**Breadcrumb navigation** at the top of the content area — small, subtle, with chevrons between folders. The current folder name is slightly bolder.
+
+**Toolbar row** just below: sort dropdown (by name, date, size), grid/list toggle, and possibly a "New Folder" button.
+
+**Folders** appear before files. In grid view, folder cards are slightly larger, with a soft folder icon (stylized, not the classic MS yellow — something more modern and color-tinted). The folder name sits below. Hovering a folder lifts it slightly (transform: translateY) and brightens its shadow.
+
+**Files** in grid view are cards with a large file type icon or image thumbnail. The mime type determines a soft background tint for the card — images show a blurred thumbnail preview as the card background. PDFs get a red tint. Videos get a dark teal tint. Documents are soft blue. The file name and size are at the bottom of the card.
+
+In list view, each row shows: checkbox, icon, name, modified date, size, a "share" icon, and a three-dot menu. Rows have a subtle hover background that slides in from left to right.
+
+**Right-click context menu** is a floating panel that appears smoothly with a scale + fade animation. Options: Open Preview, Download, Rename, Move, Star, Share, Move to Trash. Each option has a small icon and a hover highlight.
+
+**Empty states** are illustrated and friendly — a soft illustration of a floating folder or a sleepy cloud, with a caption like *"This folder is empty. Drag files here to get started."*
+
+### Upload Experience
+When a user drags files over the app, the entire page dims slightly and a large drop zone appears with a dashed glowing border and a cloud-upload icon that pulses. The text says *"Drop files to upload"*.
+
+The upload modal/panel slides up from the bottom or appears as a floating panel in the bottom-right corner (like YouTube's upload panel). It shows each uploading file as a row with: file icon, name, a smooth animated progress bar (the fill has a shimmer running across it), percentage, and a cancel button. Once a file finishes, the progress bar turns solid and a soft checkmark icon pops in with a bounce. Multiple files upload in parallel.
+
+### File Preview Modal
+Opens with a smooth scale+fade animation from the card that was clicked. Background goes dark with a blur overlay. The preview content is centered. Images show full-size with a subtle fade-in. Videos have a clean player with custom controls. PDFs render in an embedded viewer. Text files show in a styled code/text block. Audio shows a waveform-style player.
+
+At the top: file name and type. At the bottom or side: quick actions — Download, Share, Star, Move to Trash. The modal can be dismissed by pressing Escape or clicking the backdrop. Navigation arrows appear if there are multiple previewable files — click left/right to browse.
+
+### Share Modal
+Opens centered. Shows the file/folder name at the top. A URL field with the generated share link and a "Copy Link" button that transforms into a checkmark with a pop animation when clicked. Options below: toggle password protection (shows a password field that expands smoothly), set expiry (a date picker or preset chips: 24h, 7 days, 30 days, Never). A permission selector: View Only vs Download Allowed. At the bottom, a stats row: "Viewed 4 times · Downloaded 2 times."
+
+### Trash
+Same layout as the main browser but with a slightly different color temperature — items feel slightly desaturated and greyed, as if they're fading away. A banner at the top: *"Files in Trash are deleted after 30 days"* with "Empty Trash" and "Restore All" buttons. Restore and permanent delete options per item.
+
+### Search
+As the user types, results appear in a dropdown below the search bar with live results — divided by Files and Folders, each with an icon and the parent folder path shown in small text. Pressing Enter expands to a full search results page. Results highlight the matching portion of the filename in the accent color.
+
+### Settings Page
+Clean, left-nav sectioned layout (Profile, Security, Preferences, API Keys, Danger Zone). Each section is a card. Profile has avatar upload with a drag-drop circle. All inputs are the same styled rounded fields. The Danger Zone section has a red tint and a "Delete my account" button that requires typing a confirmation phrase — the button only enables when the phrase matches.
+
+### Activity Log
+A beautiful timeline view. Each entry has: a colored icon (upload = purple, download = blue, share = green, delete = red), a description sentence, a timestamp shown as relative time ("2 hours ago") with a full date on hover. The timeline has a faint vertical line connecting the dots. Infinitely scrollable.
+
+### Admin Dashboard
+A set of stat cards at the top — Total Users, Total Files, Total Storage Used, Active Today — each with a large number, a trend indicator, and a soft glowing icon. Below, a table of recent users with their storage usage shown as mini progress bars inline. Another table for recent file activity across all users. Charts are clean, soft-colored area/bar charts.
+
+### Public Share View (/s/:token)
+A centered, branded page — Koshagar logo at top. Even visitors who don't have an account should feel the brand — this page is a first impression for many people. A card showing the shared file/folder: large icon, name, size, shared by whom, when. If it's image/video/document, a preview section. A big "Download" button (gradient, glowing). If password protected, a clean password input appears first with a soft unlock animation when correct.
+
+---
+
+## Micro-Animations & Motion Design
+
+This is what separates a good app from a memorable one. Every interaction should have feedback.
+
+**Page transitions:** Content fades in with a very slight upward drift — not dramatic, just 8–12px of movement over 200–300ms. Feels like the page is surfacing.
+
+**Cards:** Hover lifts with translateY(-4px) and a slightly stronger shadow. The transition is spring-like — quick out, gentle release. On click, the card presses down slightly before the action.
+
+**Buttons:** Hover brightens or shifts the gradient subtly. Click scales down to 97%, releases back. Loading state shows a spinner that fades in — the button text fades out as it appears.
+
+**Modals:** Scale from 95% to 100% and fade in simultaneously. Backdrop blurs into existence. Exit is the reverse. Spring easing — not linear.
+
+**Progress bars:** The fill animates smoothly with a linear transition. A shimmer effect — a lighter diagonal stripe — slides across the filled portion on loop, making it feel alive.
+
+**Sidebar navigation:** Active item transitions with the pill sliding to the new position (like a sliding indicator).
+
+**Checkboxes and toggles:** Satisfying animations — the toggle slides with a slight overshoot. Checkboxes draw in the checkmark with an SVG stroke animation.
+
+**Notifications / toasts:** Slide in from the top-right with a subtle bounce. Stack gracefully if multiple appear. Auto-dismiss with a thin timer line across the bottom that drains away.
+
+**Drag and drop:** Files being dragged show a ghost with the count badge (e.g., "3 files") in the accent color. Drop targets highlight with a glowing border.
+
+**Empty state illustrations:** The icon/illustration bobs very gently on a loop — a subtle float animation, like it's weightless.
+
+**File cards loading:** Show skeleton screens — soft pulsing placeholder shapes in the card layout — while content loads. The skeleton has a gentle shimmer sweep.
+
+**Context menu:** Appears with a scale from 90% + fade, origin set to where the click happened. Items stagger in with tiny delays.
+
+**Star toggle:** The star icon fills with a pop — scales up to 120% then settles at 100% when starred. Unstar reverses with a deflate.
+
+**Upload complete:** Each file row in the upload panel pulses green briefly, the progress bar fills completely, then a checkmark bounces in.
+
+**Search input:** When focused, the search bar gently expands in width. The placeholder text fades out with the icon stepping aside.
+
+**Number stats (admin dashboard):** Count up from 0 to the real value when they first appear on screen — a smooth number ticker animation.
+
+**Breadcrumbs:** When navigating deeper, new crumbs slide in from the right. Going back, they slide out.
+
+---
+
+## Personality & Copy Tone
+
+The app has a warm, confident personality. Copy is clean and human — no jargon. Empty states are friendly, not robotic. Error messages are helpful, not scary.
+
+Examples:
+- Empty trash: *"Nothing to see here. Your trash is clean ✨"*
+- Upload success: *"Uploaded and safe."*
+- Share link copied: *"Link copied — ready to share."*
+- Login error: *"That doesn't look right. Check your email and password."*
+- Storage full: *"You're out of space. Time to clean up or upgrade."*
+
+---
+
+## Responsive Behavior
+
+On mobile, the sidebar collapses into a bottom navigation bar with icons only. The top search bar becomes a search icon that expands to fullscreen on tap. The grid becomes a single column. Upload is triggered by a floating action button in the bottom-right (a large, glowing plus button). Modals take up most of the screen. Everything touch-friendly with generous tap targets.
+
+---
+
+## What Makes This Special
+
+Every feature a user interacts with should feel considered and crafted. Not just functional — delightful. The animations are never flashy for flash's sake — they're purposeful feedback that makes the interface feel responsive and alive. The color palette creates an immersive environment, not just a tool. And the personality in the copy makes it feel like a product someone cared about deeply.
+
+This should look like it costs $15/month to use, even though it's free.
+
+---
+
+## Pages to Build
+
+1. `/` — Landing page
+2. `/login` — Login
+3. `/register` — Register
+4. `/drive` — Main file browser
+5. `/drive/folder/:id` — Folder view
+6. `/drive/starred` — Starred files
+7. `/drive/recent` — Recent files
+8. `/drive/trash` — Trash
+9. `/drive/shared` — My shared links
+10. `/drive/search` — Search results
+11. `/drive/activity` — Activity log
+12. `/drive/settings` — Settings
+13. `/admin` — Admin dashboard
+14. `/s/:token` — Public share view

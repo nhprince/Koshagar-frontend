@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Koshagar"
+version = "1.0.0"
+id = "artifacts/koshagar"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21223
+
+[services.development]
+run = "pnpm --filter @workspace/koshagar run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/koshagar", "run", "build" ]
+publicDir = "artifacts/koshagar/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21223"
+BASE_PATH = "/"
