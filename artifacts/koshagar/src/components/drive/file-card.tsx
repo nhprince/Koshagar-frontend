@@ -80,7 +80,7 @@ export function FileCard({
             variant="ghost"
             size="icon"
             className="w-7 h-7 rounded-full bg-background/70 hover:bg-white/15 backdrop-blur-sm"
-            onClick={(e) => e.preventDefault()}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           >
             <MoreVertical className="w-3.5 h-3.5 text-white" />
           </Button>

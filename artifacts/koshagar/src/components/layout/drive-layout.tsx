@@ -11,6 +11,7 @@ import { useGetStorageUsage } from "@workspace/api-client-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UploadModal } from "../modals/upload-modal";
+import { NotificationsPanel, useNotifications } from "../notifications/notifications-panel";
 
 export const UploadOpenContext = React.createContext<{ setUploadOpen: (v: boolean) => void } | null>(null);
 
@@ -26,6 +27,7 @@ export default function DriveLayout({ children }: { children?: React.ReactNode }
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [uploadOpen, setUploadOpen] = React.useState(false);
+  const notifs = useNotifications();
 
   React.useEffect(() => {
     if (!isLoading && !user) {
@@ -42,8 +44,8 @@ export default function DriveLayout({ children }: { children?: React.ReactNode }
         <MobileBottomNav />
         <div className="flex-1 flex flex-col min-w-0 relative h-full overflow-hidden">
           <div className="absolute top-0 right-0 w-[60vw] h-[50vw] bg-primary/4 rounded-full blur-[180px] pointer-events-none -z-10" />
-          <Topbar onUploadClick={() => setUploadOpen(true)} />
-          <main className="flex-1 overflow-y-auto px-4 md:px-8 lg:px-10 pb-6 z-0 h-full">
+          <Topbar onUploadClick={() => setUploadOpen(true)} notifProps={notifs} />
+          <main className="flex-1 overflow-y-auto px-[clamp(1rem,3vw,2.5rem)] pb-6 z-0 h-full">
             <AnimatePresence mode="wait">
               <motion.div
                 key={typeof window !== "undefined" ? window.location.pathname : ""}
@@ -84,15 +86,15 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
     "from-primary to-violet-400";
 
   return (
-    <aside className="w-[210px] flex-shrink-0 flex-col z-20 hidden md:flex border-r border-white/5 bg-background/60 backdrop-blur-2xl">
-      <div className="h-[60px] flex items-center px-4 border-b border-white/5">
+    <aside className="w-[clamp(11rem,14vw,15rem)] flex-shrink-0 flex-col z-20 hidden md:flex border-r border-white/5 bg-background/60 backdrop-blur-2xl">
+      <div className="h-[clamp(3.5rem,5vh,4rem)] flex items-center px-4 border-b border-white/5 flex-shrink-0">
         <Link href="/drive" className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow-md shadow-primary/25 flex-shrink-0">
             <svg viewBox="0 0 20 20" fill="none" className="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg">
               <path d="M10 2L3 7v6l7 5 7-5V7L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" fill="white" fillOpacity="0.15" />
             </svg>
           </div>
-          <span className="text-[15px] font-bold tracking-tight text-gradient">Koshagar</span>
+          <span className="text-[clamp(0.85rem,1.1vw,1rem)] font-bold tracking-tight text-gradient">Koshagar</span>
         </Link>
       </div>
 
@@ -105,7 +107,7 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
           return (
             <Link key={item.href} href={item.href}>
               <div className={`
-                flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-150 group relative text-sm
+                flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-150 group relative
                 ${isActive ? "text-white" : "text-muted-foreground hover:text-white/90 hover:bg-white/5"}
               `}>
                 {isActive && (
@@ -116,7 +118,7 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
                   />
                 )}
                 <item.icon className={`w-4 h-4 flex-shrink-0 relative z-10 ${isActive ? "text-primary" : ""}`} />
-                <span className="font-medium relative z-10 truncate">{item.label}</span>
+                <span className="font-medium relative z-10 truncate text-[clamp(0.75rem,0.9vw,0.875rem)]">{item.label}</span>
               </div>
             </Link>
           );
@@ -128,19 +130,19 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
               <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-widest px-2">Admin</p>
             </div>
             <Link href="/admin">
-              <div className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-150 group relative text-sm ${location.startsWith("/admin") ? "text-white" : "text-muted-foreground hover:text-white/90 hover:bg-white/5"}`}>
+              <div className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-150 group relative ${location.startsWith("/admin") ? "text-white" : "text-muted-foreground hover:text-white/90 hover:bg-white/5"}`}>
                 {location.startsWith("/admin") && (
                   <motion.div layoutId="sidebar-active" className="absolute inset-0 bg-primary/12 border border-primary/20 rounded-lg" transition={{ type: "spring", stiffness: 350, damping: 32 }} />
                 )}
                 <Shield className={`w-4 h-4 flex-shrink-0 relative z-10 ${location.startsWith("/admin") ? "text-primary" : ""}`} />
-                <span className="font-medium relative z-10">Admin Panel</span>
+                <span className="font-medium relative z-10 text-[clamp(0.75rem,0.9vw,0.875rem)]">Admin Panel</span>
               </div>
             </Link>
           </>
         )}
       </nav>
 
-      <div className="px-3 py-4 border-t border-white/5 space-y-3">
+      <div className="px-3 py-4 border-t border-white/5 space-y-3 flex-shrink-0">
         {storage && (
           <div className="px-1">
             <div className="flex items-center justify-between text-[11px] mb-1.5">
@@ -212,32 +214,63 @@ function MobileBottomNav() {
   );
 }
 
-function Topbar({ onUploadClick }: { onUploadClick: () => void }) {
-  const [, setLocation] = useLocation();
+function Topbar({
+  onUploadClick,
+  notifProps,
+}: {
+  onUploadClick: () => void;
+  notifProps: ReturnType<typeof useNotifications>;
+}) {
+  const [location, setLocation] = useLocation();
+  const [notifOpen, setNotifOpen] = React.useState(false);
+
+  const isSearchPage = location === "/drive/search" || location.startsWith("/drive/search");
+  const { notifications, unreadCount, markAllRead, markRead, dismiss } = notifProps;
 
   return (
-    <header className="h-[60px] flex items-center justify-between px-4 md:px-8 lg:px-10 sticky top-0 z-10 bg-background/70 backdrop-blur-xl border-b border-white/5 flex-shrink-0">
-      <div className="flex-1 max-w-lg">
-        <div
-          onClick={() => setLocation("/drive/search")}
-          className="h-9 bg-white/5 border border-white/8 rounded-full flex items-center px-3.5 gap-2.5 text-muted-foreground hover:bg-white/8 hover:border-white/15 transition-all cursor-text"
-        >
-          <SearchIcon className="w-3.5 h-3.5 flex-shrink-0" />
-          <span className="text-[13px] flex-1">Search files and folders...</span>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-muted-foreground/60">
-            <span className="text-xs">⌘</span>K
-          </kbd>
+    <header className="h-[clamp(3.5rem,5vh,4rem)] flex items-center justify-between px-[clamp(1rem,3vw,2.5rem)] sticky top-0 z-10 bg-background/70 backdrop-blur-xl border-b border-white/5 flex-shrink-0">
+      {!isSearchPage ? (
+        <div className="flex-1 max-w-lg">
+          <div
+            onClick={() => setLocation("/drive/search")}
+            className="h-9 bg-white/5 border border-white/8 rounded-full flex items-center px-3.5 gap-2.5 text-muted-foreground hover:bg-white/8 hover:border-white/15 transition-all cursor-text"
+          >
+            <SearchIcon className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="text-[13px] flex-1">Search files and folders...</span>
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] font-medium text-muted-foreground/60">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex-1" />
+      )}
 
-      <div className="flex items-center gap-1.5 pl-3">
-        <Button
-          size="icon"
-          variant="ghost"
-          className="rounded-full w-8 h-8 text-muted-foreground hover:text-white hover:bg-white/8 hidden sm:flex"
-        >
-          <Bell className="w-4 h-4" />
-        </Button>
+      <div className="flex items-center gap-1.5 pl-3 relative">
+        <div className="relative">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => setNotifOpen(v => !v)}
+            className="rounded-full w-8 h-8 text-muted-foreground hover:text-white hover:bg-white/8 hidden sm:flex relative"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[9px] font-bold rounded-full flex items-center justify-center leading-none">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </Button>
+          <NotificationsPanel
+            open={notifOpen}
+            onClose={() => setNotifOpen(false)}
+            notifications={notifications}
+            unreadCount={unreadCount}
+            onMarkAllRead={markAllRead}
+            onMarkRead={markRead}
+            onDismiss={dismiss}
+          />
+        </div>
         <Button
           onClick={onUploadClick}
           className="rounded-full bg-gradient-to-r from-primary to-violet-500 hover:opacity-90 text-white shadow-lg shadow-primary/25 border-0 h-8 px-3 md:px-4 text-sm font-medium gap-1.5"

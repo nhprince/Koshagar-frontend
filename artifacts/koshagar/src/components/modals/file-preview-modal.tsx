@@ -5,7 +5,7 @@ import { FileItem } from "@workspace/api-client-react";
 import {
   X, Download, Share2, Star, ZoomIn, ZoomOut, RotateCcw,
   FileText, Image as ImageIcon, Video, Music, Code, File,
-  Edit3, Check, Save,
+  Edit3, Save,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStarFile, getListFilesQueryKey } from "@workspace/api-client-react";
@@ -249,7 +249,7 @@ export function FilePreviewModal({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) setIsEditing(false); onOpenChange(v); }}>
-      <DialogContent className="max-w-4xl w-[95vw] h-[90vh] max-h-[90vh] glass-card border-white/10 rounded-2xl p-0 overflow-hidden flex flex-col gap-0">
+      <DialogContent hideClose className="max-w-4xl w-[95vw] h-[90vh] max-h-[90vh] glass-card border-white/10 rounded-2xl p-0 overflow-hidden flex flex-col gap-0">
         <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/5 flex-shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             {getFileIcon(item.mimeType)}
@@ -300,6 +300,7 @@ export function FilePreviewModal({
               variant="ghost" size="icon"
               onClick={() => { setIsEditing(false); onOpenChange(false); }}
               className="rounded-full w-8 h-8 hover:bg-white/10"
+              title="Close"
             >
               <X className="w-4 h-4" />
             </Button>
