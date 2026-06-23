@@ -5,6 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Custom breakpoints for 2K / 4K screens */
+  --breakpoint-3xl: 120rem;   /* 1920px */
+  --breakpoint-4xl: 160rem;   /* 2560px */
+  --breakpoint-5xl: 240rem;   /* 3840px */
+
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
   --color-border: hsl(var(--border));
