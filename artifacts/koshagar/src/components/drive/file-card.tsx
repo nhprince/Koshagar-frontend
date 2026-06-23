@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { FileItem } from "@workspace/api-client-react";
 import {
@@ -24,6 +24,7 @@ export function FileCard({
   actions: FileCardActions;
 }) {
   const isFolder = item.type === "folder";
+  const [, setLocation] = useLocation();
 
   const getIcon = () => {
     if (isFolder) return <Folder className="w-9 h-9 text-primary fill-primary/15" />;
@@ -56,10 +57,20 @@ export function FileCard({
     return "bg-white/3";
   };
 
-  const cardContent = (
+  const handleCardClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('[data-no-card-click]')) return;
+    if (isFolder) {
+      setLocation(`/drive/folder/${item.id}`);
+    } else {
+      actions.onPreview?.(item);
+    }
+  };
+
+  return (
     <motion.div
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      onClick={handleCardClick}
       className={`group relative flex flex-col rounded-2xl border border-white/8 cursor-pointer transition-all duration-200 overflow-hidden shadow-sm hover:shadow-lg ${getCardBg()} ${getCardAccent()}`}
     >
       {item.starred && (
@@ -68,7 +79,7 @@ export function FileCard({
         </div>
       )}
 
-      <div className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+      <div className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-150" data-no-card-click>
         <FileActionsMenu
           item={item}
           onShare={actions.onShare}
@@ -80,7 +91,6 @@ export function FileCard({
             variant="ghost"
             size="icon"
             className="w-7 h-7 rounded-full bg-background/70 hover:bg-white/15 backdrop-blur-sm"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           >
             <MoreVertical className="w-3.5 h-3.5 text-white" />
           </Button>
@@ -108,16 +118,6 @@ export function FileCard({
         </div>
       </div>
     </motion.div>
-  );
-
-  if (isFolder) {
-    return <Link href={`/drive/folder/${item.id}`}>{cardContent}</Link>;
-  }
-
-  return (
-    <div onClick={() => actions.onPreview?.(item)}>
-      {cardContent}
-    </div>
   );
 }
 

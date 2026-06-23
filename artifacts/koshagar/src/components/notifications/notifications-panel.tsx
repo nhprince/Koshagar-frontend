@@ -2,7 +2,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell, Upload, Share2, Star, Trash2, FolderPlus, Download,
-  X, Check, CheckCheck,
+  X, CheckCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -190,9 +190,10 @@ export function NotificationsPanel({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -8, scale: 0.97 }}
           transition={{ duration: 0.15, ease: "easeOut" }}
-          className="absolute right-0 top-full mt-2 w-[clamp(17rem,22vw,22rem)] z-50 glass-card border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+          className="absolute right-0 top-full mt-2 w-[clamp(17rem,22vw,22rem)] z-50 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden border border-white/8"
+          style={{ background: "hsl(var(--card))" }}
         >
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-white/8">
             <div className="flex items-center gap-2">
               <Bell className="w-4 h-4 text-primary" />
               <span className="font-semibold text-sm">Notifications</span>
@@ -241,8 +242,8 @@ export function NotificationsPanel({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     className={cn(
-                      "flex items-start gap-3 px-4 py-3 hover:bg-white/3 transition-colors group cursor-pointer",
-                      !n.read && "bg-primary/3"
+                      "flex items-start gap-3 px-4 py-3 transition-colors group cursor-pointer",
+                      !n.read ? "bg-primary/5 hover:bg-primary/8" : "hover:bg-white/4"
                     )}
                     onClick={() => onMarkRead(n.id)}
                   >

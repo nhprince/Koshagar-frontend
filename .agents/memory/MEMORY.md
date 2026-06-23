@@ -1,0 +1,4 @@
+- [Card click propagation](card-click-propagation.md) — use `data-no-card-click` / `data-no-row-click` attrs + `closest()` check; remove Link wrappers from folder cards, use programmatic `setLocation` instead.
+- [Notification panel solid bg](notification-panel.md) — use `style={{ background: "hsl(var(--card))" }}` inline; never use glass-card class which has 60% opacity.
+- [Dropdown menu solid bg](notification-panel.md) — same inline style needed on DropdownMenuContent in admin pages.
+- [Admin users state](admin-users.md) — mock user list in localStorage (`koshagar_admin_users`), storageQuota stored in GB per-user, AllocateStorageModal + SendResetLink + EditUser modals all present in admin/users.tsx.

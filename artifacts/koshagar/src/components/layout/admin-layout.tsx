@@ -2,9 +2,11 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/auth";
 import {
-  LayoutDashboard, Users, BarChart3, Activity, Shield,
-  ChevronRight, ArrowLeft, Server
+  LayoutDashboard, Users, BarChart3, Shield,
+  ChevronRight, ArrowLeft, Server, LogOut,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 const navItems = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -14,8 +16,16 @@ const navItems = [
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [location] = useLocation();
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    } catch {}
+    toast.success("Signed out successfully");
+    logout();
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
@@ -23,7 +33,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="fixed inset-0 z-0 bg-background/90 backdrop-blur-3xl pointer-events-none" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-primary/8 blur-[120px] rounded-full pointer-events-none z-0" />
 
-      {/* Sidebar */}
       <aside className="relative z-10 w-[220px] flex-shrink-0 border-r border-white/5 bg-background/50 backdrop-blur-2xl flex flex-col min-h-screen">
         <div className="h-[60px] flex items-center px-5 border-b border-white/5">
           <div className="flex items-center gap-2.5">
@@ -62,7 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        <div className="px-3 py-4 border-t border-white/5">
+        <div className="px-3 py-4 border-t border-white/5 space-y-3">
           <div className="px-2 py-1.5">
             <p className="text-xs font-semibold text-white truncate">{user?.name}</p>
             <p className="text-[10px] text-muted-foreground truncate mt-0.5">{user?.email}</p>
@@ -70,10 +79,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Shield className="w-2.5 h-2.5" /> ADMIN
             </span>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="w-full justify-start gap-2 text-xs text-muted-foreground hover:text-red-400 hover:bg-red-500/8 rounded-lg h-8 px-2.5"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            Sign Out
+          </Button>
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="relative z-10 flex-1 flex flex-col overflow-auto">
         <header className="h-[60px] flex items-center px-8 border-b border-white/5 bg-background/50 backdrop-blur-xl flex-shrink-0">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

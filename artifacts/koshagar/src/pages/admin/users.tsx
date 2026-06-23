@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import {
   Search, MoreVertical, Shield, User,
   FileText, UserPlus, Trash2,
-  Edit2, AlertCircle, Check,
+  Edit2, AlertCircle, Check, Key, HardDrive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,19 +33,20 @@ interface MockUser {
   role: "admin" | "user";
   fileCount: number;
   storageBytes: number;
+  storageQuotaGB: number;
   status: "active" | "suspended";
   createdAt: string;
 }
 
 const DEFAULT_USERS: MockUser[] = [
-  { id: "u1", name: "Admin User", email: "admin@koshagar.io", role: "admin", fileCount: 42, storageBytes: 1.2 * 1024 ** 3, status: "active", createdAt: "2026-01-15T00:00:00Z" },
-  { id: "u2", name: "Sarah Chen", email: "sarah.chen@company.com", role: "user", fileCount: 128, storageBytes: 3.8 * 1024 ** 3, status: "active", createdAt: "2026-02-03T00:00:00Z" },
-  { id: "u3", name: "Marcus Webb", email: "m.webb@design.studio", role: "user", fileCount: 67, storageBytes: 892 * 1024 ** 2, status: "active", createdAt: "2026-02-20T00:00:00Z" },
-  { id: "u4", name: "Priya Sharma", email: "priya@startup.io", role: "user", fileCount: 203, storageBytes: 7.1 * 1024 ** 3, status: "active", createdAt: "2026-03-01T00:00:00Z" },
-  { id: "u5", name: "Tom Okafor", email: "thomas.okafor@corp.com", role: "user", fileCount: 15, storageBytes: 234 * 1024 ** 2, status: "suspended", createdAt: "2026-03-12T00:00:00Z" },
-  { id: "u6", name: "Lena Müller", email: "l.muller@eu.design", role: "user", fileCount: 89, storageBytes: 2.4 * 1024 ** 3, status: "active", createdAt: "2026-03-28T00:00:00Z" },
-  { id: "u7", name: "James Park", email: "jpark@techfirm.co", role: "admin", fileCount: 311, storageBytes: 9.2 * 1024 ** 3, status: "active", createdAt: "2026-04-05T00:00:00Z" },
-  { id: "u8", name: "Fatima Al-Hassan", email: "fatima@creative.ae", role: "user", fileCount: 54, storageBytes: 1.1 * 1024 ** 3, status: "active", createdAt: "2026-04-18T00:00:00Z" },
+  { id: "u1", name: "Admin User", email: "admin@koshagar.io", role: "admin", fileCount: 42, storageBytes: 1.2 * 1024 ** 3, storageQuotaGB: 10, status: "active", createdAt: "2026-01-15T00:00:00Z" },
+  { id: "u2", name: "Sarah Chen", email: "sarah.chen@company.com", role: "user", fileCount: 128, storageBytes: 3.8 * 1024 ** 3, storageQuotaGB: 10, status: "active", createdAt: "2026-02-03T00:00:00Z" },
+  { id: "u3", name: "Marcus Webb", email: "m.webb@design.studio", role: "user", fileCount: 67, storageBytes: 892 * 1024 ** 2, storageQuotaGB: 5, status: "active", createdAt: "2026-02-20T00:00:00Z" },
+  { id: "u4", name: "Priya Sharma", email: "priya@startup.io", role: "user", fileCount: 203, storageBytes: 7.1 * 1024 ** 3, storageQuotaGB: 20, status: "active", createdAt: "2026-03-01T00:00:00Z" },
+  { id: "u5", name: "Tom Okafor", email: "thomas.okafor@corp.com", role: "user", fileCount: 15, storageBytes: 234 * 1024 ** 2, storageQuotaGB: 5, status: "suspended", createdAt: "2026-03-12T00:00:00Z" },
+  { id: "u6", name: "Lena Müller", email: "l.muller@eu.design", role: "user", fileCount: 89, storageBytes: 2.4 * 1024 ** 3, storageQuotaGB: 10, status: "active", createdAt: "2026-03-28T00:00:00Z" },
+  { id: "u7", name: "James Park", email: "jpark@techfirm.co", role: "admin", fileCount: 311, storageBytes: 9.2 * 1024 ** 3, storageQuotaGB: 50, status: "active", createdAt: "2026-04-05T00:00:00Z" },
+  { id: "u8", name: "Fatima Al-Hassan", email: "fatima@creative.ae", role: "user", fileCount: 54, storageBytes: 1.1 * 1024 ** 3, storageQuotaGB: 10, status: "active", createdAt: "2026-04-18T00:00:00Z" },
 ];
 
 const STORAGE_KEY = "koshagar_admin_users";
@@ -53,7 +54,10 @@ const STORAGE_KEY = "koshagar_admin_users";
 function loadUsers(): MockUser[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed.map((u: MockUser) => ({ storageQuotaGB: 10, ...u }));
+    }
   } catch {}
   return DEFAULT_USERS;
 }
@@ -72,7 +76,8 @@ function formatBytes(bytes: number) {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-function StorageBar({ used, total }: { used: number; total: number }) {
+function StorageBar({ used, quotaGB }: { used: number; quotaGB: number }) {
+  const total = quotaGB * 1024 ** 3;
   const pct = total > 0 ? (used / total) * 100 : 0;
   const color = pct > 90 ? "bg-red-500" : pct > 70 ? "bg-amber-500" : "bg-primary";
   return (
@@ -89,6 +94,7 @@ function InviteUserModal({ open, onClose, onInvite }: { open: boolean; onClose: 
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [role, setRole] = React.useState<"user" | "admin">("user");
+  const [quotaGB, setQuotaGB] = React.useState(10);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,11 +106,12 @@ function InviteUserModal({ open, onClose, onInvite }: { open: boolean; onClose: 
       role,
       fileCount: 0,
       storageBytes: 0,
+      storageQuotaGB: quotaGB,
       status: "active",
       createdAt: new Date().toISOString(),
     };
     onInvite(newUser);
-    setName(""); setEmail(""); setRole("user");
+    setName(""); setEmail(""); setRole("user"); setQuotaGB(10);
     onClose();
   };
 
@@ -139,6 +146,22 @@ function InviteUserModal({ open, onClose, onInvite }: { open: boolean; onClose: 
                   {r}
                 </button>
               ))}
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm text-muted-foreground">Storage Quota</label>
+            <div className="flex items-center gap-3">
+              <Input type="number" min={1} max={1000} value={quotaGB} onChange={e => setQuotaGB(Number(e.target.value))}
+                className="bg-white/5 border-white/10 focus:border-primary rounded-xl h-11 w-28" />
+              <span className="text-sm text-muted-foreground">GB</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {[5, 10, 20, 50].map(gb => (
+                  <button key={gb} type="button" onClick={() => setQuotaGB(gb)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${quotaGB === gb ? "bg-primary/15 border-primary/30 text-primary" : "bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10"}`}>
+                    {gb}GB
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter className="gap-2 pt-2">
@@ -201,6 +224,100 @@ function EditUserModal({ user, open, onClose, onSave }: { user: MockUser | null;
   );
 }
 
+function AllocateStorageModal({ user, open, onClose, onSave }: { user: MockUser | null; open: boolean; onClose: () => void; onSave: (u: MockUser) => void }) {
+  const [quotaGB, setQuotaGB] = React.useState(10);
+
+  React.useEffect(() => { if (user) setQuotaGB(user.storageQuotaGB); }, [user]);
+
+  if (!user) return null;
+
+  const usedGB = user.storageBytes / 1024 ** 3;
+
+  return (
+    <Dialog open={open} onOpenChange={v => !v && onClose()}>
+      <DialogContent className="sm:max-w-[420px] glass-card border-white/10 rounded-2xl p-6">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2.5 text-lg">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <HardDrive className="w-4 h-4" />
+            </div>
+            Allocate Storage
+          </DialogTitle>
+        </DialogHeader>
+        <div className="mt-4 space-y-5">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-white/4 border border-white/8">
+            <Avatar className="w-8 h-8 border border-white/10 flex-shrink-0">
+              <AvatarFallback className={`text-xs font-semibold ${user.role === "admin" ? "bg-primary/15 text-primary" : "bg-white/10 text-muted-foreground"}`}>
+                {user.name?.charAt(0)?.toUpperCase() || "U"}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold truncate">{user.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Current usage</span>
+              <span className="text-white font-medium">{usedGB.toFixed(2)} GB / {user.storageQuotaGB} GB</span>
+            </div>
+            <div className="h-2 bg-white/8 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${(usedGB / user.storageQuotaGB) > 0.9 ? "bg-red-500" : (usedGB / user.storageQuotaGB) > 0.7 ? "bg-amber-500" : "bg-primary"}`}
+                style={{ width: `${Math.min(100, (usedGB / user.storageQuotaGB) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-muted-foreground">New Storage Quota</label>
+            {quotaGB < usedGB && (
+              <p className="text-xs text-amber-400 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Quota below current usage — user won't be able to upload
+              </p>
+            )}
+            <div className="flex items-center gap-3">
+              <Input
+                type="number"
+                min={1}
+                max={1000}
+                value={quotaGB}
+                onChange={e => setQuotaGB(Math.max(1, Number(e.target.value)))}
+                className="bg-white/5 border-white/10 focus:border-primary rounded-xl h-11 w-28"
+              />
+              <span className="text-sm text-muted-foreground">GB</span>
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {[5, 10, 20, 50, 100].map(gb => (
+                <button
+                  key={gb}
+                  type="button"
+                  onClick={() => setQuotaGB(gb)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${quotaGB === gb ? "bg-primary/15 border-primary/30 text-primary" : "bg-white/5 border-white/10 text-muted-foreground hover:bg-white/10"}`}
+                >
+                  {gb} GB
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <DialogFooter className="gap-2 pt-4">
+          <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl hover:bg-white/10">Cancel</Button>
+          <Button
+            type="button"
+            onClick={() => { onSave({ ...user, storageQuotaGB: quotaGB }); onClose(); }}
+            className="rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground border-0 hover:opacity-90"
+          >
+            Apply Quota
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<MockUser[]>(loadUsers);
   const [search, setSearch] = useState("");
@@ -208,6 +325,7 @@ export default function AdminUsers() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
   const [inviteOpen, setInviteOpen] = useState(false);
   const [editUser, setEditUser] = useState<MockUser | null>(null);
+  const [storageUser, setStorageUser] = useState<MockUser | null>(null);
 
   const filtered = users.filter(u => {
     const matchSearch = !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase());
@@ -218,6 +336,10 @@ export default function AdminUsers() {
 
   const handleInvite = (u: MockUser) => { updateUsers([...users, u]); toast.success(`Invited ${u.name} as ${u.role}`); };
   const handleEditSave = (u: MockUser) => { updateUsers(users.map(x => x.id === u.id ? u : x)); toast.success(`Updated ${u.name}`); };
+  const handleStorageSave = (u: MockUser) => {
+    updateUsers(users.map(x => x.id === u.id ? u : x));
+    toast.success(`Storage quota for ${u.name} set to ${u.storageQuotaGB} GB`);
+  };
   const handleRoleChange = (id: string, role: "admin" | "user") => {
     const u = users.find(x => x.id === id); if (!u) return;
     updateUsers(users.map(x => x.id === id ? { ...x, role } : x));
@@ -233,6 +355,9 @@ export default function AdminUsers() {
     const u = users.find(x => x.id === id); if (!u) return;
     updateUsers(users.filter(x => x.id !== id));
     toast.success(`Deleted ${u.name}`);
+  };
+  const handleResetPassword = (u: MockUser) => {
+    toast.success(`Password reset link sent to ${u.email}`);
   };
 
   return (
@@ -278,8 +403,8 @@ export default function AdminUsers() {
             <div className="col-span-3">User</div>
             <div className="col-span-2">Role</div>
             <div className="col-span-1">Files</div>
-            <div className="col-span-2">Storage</div>
-            <div className="col-span-2">Status</div>
+            <div className="col-span-3">Storage</div>
+            <div className="col-span-1">Status</div>
             <div className="col-span-1">Joined</div>
             <div className="col-span-1 text-right">Actions</div>
           </div>
@@ -313,11 +438,14 @@ export default function AdminUsers() {
                     <FileText className="w-3.5 h-3.5 text-muted-foreground/50" />
                     <span className="text-sm tabular-nums">{user.fileCount}</span>
                   </div>
-                  <div className="lg:col-span-2 hidden lg:block space-y-1">
-                    <p className="text-xs text-muted-foreground tabular-nums">{formatBytes(user.storageBytes)}</p>
-                    <StorageBar used={user.storageBytes} total={10 * 1024 * 1024 * 1024} />
+                  <div className="lg:col-span-3 hidden lg:block space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground tabular-nums">{formatBytes(user.storageBytes)}</p>
+                      <p className="text-xs text-muted-foreground/60 tabular-nums">{user.storageQuotaGB} GB</p>
+                    </div>
+                    <StorageBar used={user.storageBytes} quotaGB={user.storageQuotaGB} />
                   </div>
-                  <div className="lg:col-span-2 hidden lg:block">
+                  <div className="lg:col-span-1 hidden lg:block">
                     <span className={`inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-2 py-0.5 ${user.status === "active" ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}>
                       {user.status === "active" ? <Check className="w-2.5 h-2.5" /> : <AlertCircle className="w-2.5 h-2.5" />}
                       {user.status}
@@ -333,9 +461,15 @@ export default function AdminUsers() {
                           <MoreVertical className="w-3.5 h-3.5" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48 glass-card border-white/10 rounded-xl p-1.5 shadow-2xl">
+                      <DropdownMenuContent align="end" className="w-52 glass-card border-white/10 rounded-xl p-1.5 shadow-2xl" style={{ background: "hsl(var(--card))" }}>
                         <DropdownMenuItem className="rounded-lg text-xs cursor-pointer focus:bg-white/10" onClick={() => setEditUser(user)}>
                           <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="rounded-lg text-xs cursor-pointer focus:bg-white/10" onClick={() => setStorageUser(user)}>
+                          <HardDrive className="w-3.5 h-3.5 mr-2 text-cyan-400" /> Allocate Storage
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="rounded-lg text-xs cursor-pointer focus:bg-white/10" onClick={() => handleResetPassword(user)}>
+                          <Key className="w-3.5 h-3.5 mr-2 text-amber-400" /> Send Reset Link
                         </DropdownMenuItem>
                         <DropdownMenuItem className="rounded-lg text-xs cursor-pointer focus:bg-white/10" onClick={() => handleRoleChange(user.id, user.role === "admin" ? "user" : "admin")}>
                           <Shield className="w-3.5 h-3.5 mr-2" /> Make {user.role === "admin" ? "User" : "Admin"}
@@ -361,6 +495,7 @@ export default function AdminUsers() {
 
       <InviteUserModal open={inviteOpen} onClose={() => setInviteOpen(false)} onInvite={handleInvite} />
       <EditUserModal user={editUser} open={!!editUser} onClose={() => setEditUser(null)} onSave={handleEditSave} />
+      <AllocateStorageModal user={storageUser} open={!!storageUser} onClose={() => setStorageUser(null)} onSave={handleStorageSave} />
     </AdminLayout>
   );
 }

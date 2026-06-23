@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { FileItem } from "@workspace/api-client-react";
 import {
   Folder, File, Image as ImageIcon, FileText, Music, Video, Code,
@@ -17,28 +17,32 @@ export function FileRow({
   actions: FileCardActions;
 }) {
   const isFolder = item.type === "folder";
+  const [, setLocation] = useLocation();
 
   const getIcon = () => {
-    if (isFolder) return <Folder className="w-4.5 h-4.5 text-primary fill-primary/20" />;
-    if (item.mimeType.startsWith("image/")) return <ImageIcon className="w-4.5 h-4.5 text-blue-400" />;
-    if (item.mimeType.startsWith("video/")) return <Video className="w-4.5 h-4.5 text-rose-400" />;
-    if (item.mimeType.startsWith("audio/")) return <Music className="w-4.5 h-4.5 text-amber-400" />;
-    if (item.mimeType.includes("pdf")) return <FileText className="w-4.5 h-4.5 text-red-500" />;
+    if (isFolder) return <Folder className="w-[18px] h-[18px] text-primary fill-primary/20" />;
+    if (item.mimeType.startsWith("image/")) return <ImageIcon className="w-[18px] h-[18px] text-blue-400" />;
+    if (item.mimeType.startsWith("video/")) return <Video className="w-[18px] h-[18px] text-rose-400" />;
+    if (item.mimeType.startsWith("audio/")) return <Music className="w-[18px] h-[18px] text-amber-400" />;
+    if (item.mimeType.includes("pdf")) return <FileText className="w-[18px] h-[18px] text-red-500" />;
     if (
       item.mimeType.includes("javascript") || item.mimeType.includes("typescript") ||
       item.mimeType.includes("json") || item.mimeType.includes("html") ||
       item.mimeType.includes("css")
-    ) return <Code className="w-4.5 h-4.5 text-emerald-400" />;
-    return <File className="w-4.5 h-4.5 text-muted-foreground" />;
+    ) return <Code className="w-[18px] h-[18px] text-emerald-400" />;
+    return <File className="w-[18px] h-[18px] text-muted-foreground" />;
   };
 
-  const handleClick = () => {
-    if (!isFolder && actions.onPreview) {
+  const handleClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('[data-no-row-click]')) return;
+    if (isFolder) {
+      setLocation(`/drive/folder/${item.id}`);
+    } else if (actions.onPreview) {
       actions.onPreview(item);
     }
   };
 
-  const rowContent = (
+  return (
     <div
       className="grid grid-cols-12 gap-3 px-3 py-2.5 items-center rounded-xl hover:bg-white/5 border border-transparent hover:border-white/8 transition-all duration-150 cursor-pointer group"
       onClick={handleClick}
@@ -63,8 +67,8 @@ export function FileRow({
         {isFolder ? "—" : formatBytes(item.size)}
       </div>
 
-      <div className="col-span-6 md:col-span-2 flex justify-end items-center">
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+      <div className="col-span-6 md:col-span-2 flex justify-end items-center" data-no-row-click>
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <FileActionsMenu
             item={item}
             onShare={actions.onShare}
@@ -84,11 +88,6 @@ export function FileRow({
       </div>
     </div>
   );
-
-  if (isFolder) {
-    return <Link href={`/drive/folder/${item.id}`}>{rowContent}</Link>;
-  }
-  return rowContent;
 }
 
 function formatBytes(bytes: number, decimals = 1) {
