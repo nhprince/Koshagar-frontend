@@ -2,7 +2,8 @@ import { Router } from "express";
 import { db, filesTable, activityTable } from "@workspace/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
-import archiver from "archiver";
+import * as archiverLib from "archiver";
+const archiver = (archiverLib as any).default ?? archiverLib;
 
 const router = Router();
 
