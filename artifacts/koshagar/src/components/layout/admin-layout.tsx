@@ -33,7 +33,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="fixed inset-0 z-0 bg-background/90 backdrop-blur-3xl pointer-events-none" />
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-primary/8 blur-[120px] rounded-full pointer-events-none z-0" />
 
-      <aside className="relative z-10 w-[220px] flex-shrink-0 border-r border-white/5 bg-background/50 backdrop-blur-2xl flex flex-col min-h-screen">
+      <aside className="relative z-10 w-[220px] flex-shrink-0 border-r border-white/5 bg-background/50 backdrop-blur-2xl flex flex-col h-screen sticky top-0 overflow-hidden">
         <div className="h-[60px] flex items-center px-5 border-b border-white/5">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow-md shadow-primary/25 flex-shrink-0">
@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        <nav className="flex-1 px-2.5 py-3 space-y-0.5">
+        <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
           <Link href="/drive">
             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-muted-foreground hover:text-white hover:bg-white/5 transition-all text-xs cursor-pointer mb-3">
               <ArrowLeft className="w-3.5 h-3.5" />

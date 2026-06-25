@@ -157,6 +157,25 @@ router.patch("/files/:id", requireAuth, async (req, res) => {
   res.json(toFileItem(file));
 });
 
+router.patch("/files/:id/content", requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id as string);
+  const { dataUrl, size } = req.body;
+
+  const [existing] = await db.select().from(filesTable)
+    .where(and(eq(filesTable.id, id), eq(filesTable.ownerId, req.userId!)));
+  if (!existing) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  const [file] = await db.update(filesTable)
+    .set({ dataUrl: dataUrl ?? existing.dataUrl, size: typeof size === "number" ? size : existing.size, updatedAt: new Date() })
+    .where(eq(filesTable.id, id))
+    .returning();
+
+  res.json({ ...toFileItem(file), dataUrl: file.dataUrl ?? null });
+});
+
 router.delete("/files/:id", requireAuth, async (req, res) => {
   const id = parseInt(req.params.id as string);
   const [existing] = await db.select().from(filesTable)

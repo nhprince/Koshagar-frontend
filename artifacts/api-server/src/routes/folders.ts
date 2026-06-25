@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, filesTable, activityTable } from "@workspace/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
+import archiver from "archiver";
 
 const router = Router();
 
@@ -67,6 +68,43 @@ router.get("/folders/:id", requireAuth, async (req, res) => {
     folder: toFileItem(folder),
     breadcrumb,
   });
+});
+
+router.get("/folders/:id/download-zip", requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id as string);
+  const [folder] = await db.select().from(filesTable)
+    .where(and(eq(filesTable.id, id), eq(filesTable.ownerId, req.userId!), eq(filesTable.type, "folder")));
+
+  if (!folder) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(folder.name)}.zip"`);
+
+  const archive = archiver("zip", { zlib: { level: 6 } });
+  archive.on("error", () => res.end());
+  archive.pipe(res);
+
+  async function addFolder(folderId: number, prefix: string) {
+    const items = await db.select().from(filesTable)
+      .where(and(eq(filesTable.folderId, folderId), eq(filesTable.ownerId, req.userId!), eq(filesTable.trashed, false)));
+    for (const item of items) {
+      if (item.type === "file" && item.dataUrl) {
+        const match = item.dataUrl.match(/^data:[^;]+;base64,(.+)$/s);
+        if (match) {
+          const buf = Buffer.from(match[1], "base64");
+          archive.append(buf, { name: `${prefix}${item.name}` });
+        }
+      } else if (item.type === "folder") {
+        await addFolder(item.id, `${prefix}${item.name}/`);
+      }
+    }
+  }
+
+  await addFolder(id, "");
+  await archive.finalize();
 });
 
 export default router;

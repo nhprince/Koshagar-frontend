@@ -63,6 +63,8 @@ router.post("/share", requireAuth, async (req, res) => {
 
 router.get("/share/:token", async (req, res) => {
   const token = req.params.token as string;
+  const password = req.query.password as string | undefined;
+
   const [share] = await db.select().from(sharesTable).where(eq(sharesTable.token, token));
 
   if (!share) {
@@ -76,8 +78,15 @@ router.get("/share/:token", async (req, res) => {
   }
 
   if (share.passwordHash) {
-    res.status(401).json({ error: "Password required", requiresPassword: true });
-    return;
+    if (!password) {
+      res.json({ requiresPassword: true, file: null, allowDownload: false, sharedBy: null, expiresAt: null });
+      return;
+    }
+    const hash = hashSharePassword(password);
+    if (hash !== share.passwordHash) {
+      res.status(401).json({ error: "Invalid password", requiresPassword: true });
+      return;
+    }
   }
 
   const [file] = await db.select().from(filesTable).where(eq(filesTable.id, share.fileId));
@@ -203,19 +212,21 @@ router.get("/share/:token/browse", async (req, res) => {
   const contents = await db.select().from(filesTable)
     .where(and(eq(filesTable.folderId, targetFolderId), eq(filesTable.ownerId, rootFolder.ownerId), eq(filesTable.trashed, false)));
 
+  // Breadcrumb = ancestors only (not the current folder itself)
   const breadcrumb: { id: number; name: string }[] = [];
+  let currentFolderName = rootFolder.name;
   if (subfolderId && subfolderId !== rootFolder.id) {
-    let current: typeof filesTable.$inferSelect | undefined;
-    let currentId = subfolderId;
+    const [currentFolderRecord] = await db.select().from(filesTable).where(eq(filesTable.id, subfolderId));
+    currentFolderName = currentFolderRecord?.name ?? rootFolder.name;
+    let walkId: number | null = currentFolderRecord?.folderId ?? null;
     const seen = new Set<number>();
-    while (currentId !== rootFolder.id) {
-      if (seen.has(currentId)) break;
-      seen.add(currentId);
-      const [f] = await db.select().from(filesTable).where(eq(filesTable.id, currentId));
-      if (!f || !f.folderId) break;
-      current = f;
+    while (walkId && walkId !== rootFolder.id) {
+      if (seen.has(walkId)) break;
+      seen.add(walkId);
+      const [f] = await db.select().from(filesTable).where(eq(filesTable.id, walkId));
+      if (!f) break;
       breadcrumb.unshift({ id: f.id, name: f.name });
-      currentId = f.folderId;
+      walkId = f.folderId ?? null;
     }
   }
 
@@ -232,13 +243,58 @@ router.get("/share/:token/browse", async (req, res) => {
 
   res.json({
     rootFolder: { id: rootFolder.id, name: rootFolder.name },
-    currentFolder: { id: targetFolderId, name: subfolderId && subfolderId !== rootFolder.id ? (breadcrumb[breadcrumb.length - 1]?.name ?? rootFolder.name) : rootFolder.name },
+    currentFolder: { id: targetFolderId, name: currentFolderName },
     breadcrumb,
     folders,
     files,
     allowDownload: share.allowDownload,
     sharedBy: owner?.name ?? "Unknown",
   });
+});
+
+router.get("/share/:token/download-zip", async (req, res) => {
+  const token = req.params.token as string;
+  const password = req.query.password as string | undefined;
+
+  const [share] = await db.select().from(sharesTable).where(eq(sharesTable.token, token));
+  if (!share) { res.status(404).json({ error: "Not found" }); return; }
+  if (share.expiresAt && share.expiresAt < new Date()) { res.status(410).json({ error: "Expired" }); return; }
+  if (!share.allowDownload) { res.status(403).json({ error: "Download not allowed" }); return; }
+
+  if (share.passwordHash) {
+    if (!password) { res.status(401).json({ error: "Password required" }); return; }
+    if (hashSharePassword(password) !== share.passwordHash) { res.status(401).json({ error: "Invalid password" }); return; }
+  }
+
+  const [rootFolder] = await db.select().from(filesTable)
+    .where(and(eq(filesTable.id, share.fileId), eq(filesTable.type, "folder")));
+  if (!rootFolder) { res.status(400).json({ error: "Not a folder share" }); return; }
+
+  const { default: archiverFn } = await import("archiver");
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(rootFolder.name)}.zip"`);
+  const archive = archiverFn("zip", { zlib: { level: 6 } });
+  archive.on("error", () => res.end());
+  archive.pipe(res);
+
+  async function addFolder(folderId: number, prefix: string) {
+    const items = await db.select().from(filesTable)
+      .where(and(eq(filesTable.folderId, folderId), eq(filesTable.ownerId, rootFolder.ownerId), eq(filesTable.trashed, false)));
+    for (const item of items) {
+      if (item.type === "file" && item.dataUrl) {
+        const match = item.dataUrl.match(/^data:[^;]+;base64,(.+)$/s);
+        if (match) {
+          const buf = Buffer.from(match[1], "base64");
+          archive.append(buf, { name: `${prefix}${item.name}` });
+        }
+      } else if (item.type === "folder") {
+        await addFolder(item.id, `${prefix}${item.name}/`);
+      }
+    }
+  }
+
+  await addFolder(rootFolder.id, "");
+  await archive.finalize();
 });
 
 router.get("/share/:token/file/:fileId/download", async (req, res) => {

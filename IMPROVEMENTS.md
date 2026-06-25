@@ -1,5 +1,40 @@
 # Koshagar — Production Readiness & Feature Roadmap
 
+---
+
+## 🚨 Critical Bugs (Logged Jun 25 2026 — now fixed)
+
+These were identified during testing and have been resolved:
+
+| # | Bug | Fix Applied |
+|---|-----|-------------|
+| 1 | **Password-protected share shows "Unavailable"** | Backend now returns HTTP 200 with `requiresPassword: true` instead of 401; frontend uses custom `useQuery` fetcher with `?password=` param support |
+| 2 | **Text files can't be edited** | Added `Edit` mode to file preview modal with a full textarea editor; new `PATCH /api/files/:id/content` backend endpoint |
+| 3 | **File creation produces blank files** | Fixed — `Create File` modal always initialises content (template starter content per type); editor in preview allows immediate editing |
+| 4 | **Only 4 file types in creation modal** | Expanded to 14 types (HTML, CSS, JS, TS, JSON, MD, TXT, CSV, YAML, XML, PY, SH, SQL, SVG) plus a "Custom extension" option |
+| 5 | **File type selector shows plain text, no icons** | Replaced text labels with coloured monospace badge-style type icons per language |
+| 6 | **Shared folder breadcrumb shows duplicate folder name** | Backend `browse` endpoint now builds ancestors-only breadcrumb (excludes current folder); current folder name shown separately once |
+| 7 | **No way to download whole folders** | Added `GET /api/folders/:id/download-zip` (auth) and `GET /api/share/:token/download-zip` (public); both stream a recursive ZIP using archiver |
+| 8 | **Long videos crash / load entire file** | Video viewer now uses `preload="metadata"` to avoid loading the full file; blob URL conversion is lazy |
+| 9 | **Admin sidebar bottom elements scroll off screen** | Changed `min-h-screen` → `h-screen sticky top-0`; nav section is `overflow-y-auto` so content scrolls within a fixed viewport height |
+| 10 | **File preview modal not fully responsive** | Improved layout for all viewers; PDF uses blob URL with toolbar; markdown has toggle-edit; code/text have Edit button |
+
+---
+
+## 🔜 Still Needed (Near-term, not yet implemented)
+
+| # | Item | Notes |
+|---|------|-------|
+| 1 | **Video & PDF thumbnails** | Video thumbnails can be generated client-side by capturing the first frame via Canvas API on upload; PDF thumbnails require PDF.js integration |
+| 2 | **Real object storage (S3/R2/GCS)** | Files stored as base64 data URLs in Postgres — works for small files but breaks for videos/large uploads; wire to real blob storage |
+| 3 | **Streaming video playback** | Without real storage, large videos are decoded into memory; needs object storage + range-request support |
+| 4 | **Drive folder "Download as ZIP" button** | ZIP endpoint exists on backend; need to add Download ZIP action to folder context menu in the drive |
+| 5 | **Custom extension in file preview icon mapping** | Unknown extensions show a generic icon; could use extension-based fallback |
+
+---
+
+
+
 > A living document of everything needed to elevate Koshagar from a capable demo into a world-class, production-grade cloud storage platform. Organised by category, roughly prioritised within each section.
 
 ---

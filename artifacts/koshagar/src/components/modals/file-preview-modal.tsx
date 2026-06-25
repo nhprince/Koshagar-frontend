@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { FileItem, useStarFile, useGetFile, getListFilesQueryKey, getGetFileQueryKey } from "@workspace/api-client-react";
 import {
   X, Download, Share2, Star, ZoomIn, ZoomOut, RotateCcw,
-  FileText, Image as ImageIcon, Video, Music, Code, File, Loader2,
+  FileText, Image as ImageIcon, Video, Music, Code, File, Loader2, Edit2, Check, XCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,7 +28,8 @@ function getFileCategory(mimeType: string): "image" | "video" | "audio" | "text"
     mimeType.includes("javascript") || mimeType.includes("typescript") ||
     mimeType.includes("json") || mimeType.includes("xml") ||
     mimeType.includes("html") || mimeType.includes("css") ||
-    mimeType.includes("python") || mimeType.includes("ruby") ||
+    mimeType.includes("python") || mimeType.includes("shellscript") ||
+    mimeType.includes("sql") || mimeType.includes("yaml") ||
     mimeType.includes("rust") || mimeType.includes("go") || mimeType.includes("java")
   ) return "code";
   if (mimeType.startsWith("text/")) return "text";
@@ -52,14 +53,25 @@ function getFileIcon(mimeType: string, cls = "w-4.5 h-4.5") {
 function decodeBase64Text(dataUrl: string): string {
   try {
     const match = dataUrl.match(/^data:[^;]+;base64,(.+)$/s);
-    if (match) return atob(match[1]);
+    if (match) {
+      const decoded = atob(match[1]);
+      return decodeURIComponent(escape(decoded));
+    }
     if (dataUrl.startsWith("data:")) {
       const content = dataUrl.split(",").slice(1).join(",");
       return decodeURIComponent(content);
     }
     return dataUrl;
   } catch {
-    return dataUrl;
+    try { return atob(dataUrl.split(",")[1] ?? ""); } catch { return dataUrl; }
+  }
+}
+
+function encodeToDataUrl(content: string, mime: string): string {
+  try {
+    return `data:${mime};base64,` + btoa(unescape(encodeURIComponent(content)));
+  } catch {
+    return `data:${mime};base64,` + btoa(content);
   }
 }
 
@@ -106,26 +118,17 @@ function ImageViewer({ item, dataUrl }: { item: FileItem; dataUrl: string | null
             draggable={false}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }}
           />
         ) : (
           <PlaceholderView icon={<ImageIcon className="w-14 h-14 opacity-15" />} label={item.name} note="Image preview unavailable" />
         )}
       </div>
       <div className="flex items-center justify-center gap-1.5 flex-shrink-0">
-        <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.25, z - 0.25))} className="rounded-full w-8 h-8 hover:bg-white/10">
-          <ZoomOut className="w-3.5 h-3.5" />
-        </Button>
-        <Button variant="ghost" onClick={() => setZoom(1)} className="rounded-full h-8 px-3 text-xs hover:bg-white/10 tabular-nums min-w-[52px]">
-          {Math.round(zoom * 100)}%
-        </Button>
-        <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="rounded-full w-8 h-8 hover:bg-white/10">
-          <ZoomIn className="w-3.5 h-3.5" />
-        </Button>
+        <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.max(0.25, z - 0.25))} className="rounded-full w-8 h-8 hover:bg-white/10"><ZoomOut className="w-3.5 h-3.5" /></Button>
+        <Button variant="ghost" onClick={() => setZoom(1)} className="rounded-full h-8 px-3 text-xs hover:bg-white/10 tabular-nums min-w-[52px]">{Math.round(zoom * 100)}%</Button>
+        <Button variant="ghost" size="icon" onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="rounded-full w-8 h-8 hover:bg-white/10"><ZoomIn className="w-3.5 h-3.5" /></Button>
         <div className="w-px h-4 bg-white/10 mx-1" />
-        <Button variant="ghost" size="icon" onClick={() => setZoom(1)} className="rounded-full w-8 h-8 hover:bg-white/10" title="Reset zoom">
-          <RotateCcw className="w-3.5 h-3.5" />
-        </Button>
+        <Button variant="ghost" size="icon" onClick={() => setZoom(1)} className="rounded-full w-8 h-8 hover:bg-white/10" title="Reset"><RotateCcw className="w-3.5 h-3.5" /></Button>
       </div>
     </div>
   );
@@ -133,22 +136,41 @@ function ImageViewer({ item, dataUrl }: { item: FileItem; dataUrl: string | null
 
 function VideoViewer({ item, dataUrl }: { item: FileItem; dataUrl: string | null }) {
   const [blobUrl, setBlobUrl] = React.useState<string | null>(null);
+  const [converting, setConverting] = React.useState(false);
 
   React.useEffect(() => {
     if (!dataUrl) return;
+    setConverting(true);
     const url = dataUrlToBlobUrl(dataUrl, item.mimeType);
     setBlobUrl(url);
+    setConverting(false);
     return () => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); };
   }, [dataUrl, item.mimeType]);
 
-  const src = blobUrl || dataUrl || null;
+  const src = blobUrl || null;
 
   return (
-    <div className="flex-1 flex items-center justify-center bg-black/40 rounded-xl overflow-hidden min-h-0">
-      {src ? (
-        <video controls className="max-w-full max-h-full rounded-lg" src={src} />
-      ) : (
+    <div className="flex-1 flex items-center justify-center bg-black rounded-xl overflow-hidden min-h-0">
+      {converting ? (
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="w-8 h-8 animate-spin" />
+          <p className="text-sm">Preparing video…</p>
+        </div>
+      ) : src ? (
+        <video
+          controls
+          preload="metadata"
+          className="max-w-full max-h-full w-full h-full object-contain"
+          src={src}
+          playsInline
+        />
+      ) : !dataUrl ? (
         <PlaceholderView icon={<Video className="w-14 h-14 opacity-15" />} label={item.name} note="Video preview unavailable" />
+      ) : (
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <Loader2 className="w-8 h-8 animate-spin" />
+          <p className="text-sm">Loading video…</p>
+        </div>
       )}
     </div>
   );
@@ -164,8 +186,6 @@ function AudioViewer({ item, dataUrl }: { item: FileItem; dataUrl: string | null
     return () => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); };
   }, [dataUrl, item.mimeType]);
 
-  const src = blobUrl || dataUrl || null;
-
   return (
     <div className="flex-1 flex items-center justify-center min-h-0">
       <div className="flex flex-col items-center gap-5 p-8 w-full max-w-sm">
@@ -176,43 +196,123 @@ function AudioViewer({ item, dataUrl }: { item: FileItem; dataUrl: string | null
           <p className="font-semibold text-base">{item.name}</p>
           <p className="text-sm text-muted-foreground mt-1">{formatBytes(item.size)}</p>
         </div>
-        {src ? (
-          <audio controls src={src} className="w-full" />
+        {(blobUrl || dataUrl) ? (
+          <audio controls src={blobUrl ?? dataUrl ?? undefined} className="w-full" preload="metadata" />
         ) : (
-          <p className="text-sm text-muted-foreground/60 text-center">Audio preview unavailable</p>
+          <p className="text-sm text-muted-foreground/60">Audio preview unavailable</p>
         )}
       </div>
     </div>
   );
 }
 
-function TextViewer({ item, dataUrl, category }: { item: FileItem; dataUrl: string | null; category: "text" | "code" | "markdown" }) {
+function TextViewer({
+  item, dataUrl, category, onSaved,
+}: { item: FileItem; dataUrl: string | null; category: "text" | "code" | "markdown"; onSaved?: () => void }) {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editContent, setEditContent] = React.useState("");
+  const [isSaving, setIsSaving] = React.useState(false);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
   const content = React.useMemo(() => {
     if (!dataUrl) return null;
     return decodeBase64Text(dataUrl);
   }, [dataUrl]);
 
-  if (!content) {
-    return <PlaceholderView icon={<FileText className="w-14 h-14 opacity-15" />} label={item.name} note="Text content unavailable" />;
-  }
+  const startEdit = () => {
+    setEditContent(content ?? "");
+    setIsEditing(true);
+    setTimeout(() => textareaRef.current?.focus(), 50);
+  };
 
-  if (category === "markdown") {
-    const html = renderMarkdown(content);
+  const cancelEdit = () => { setIsEditing(false); setEditContent(""); };
+
+  const saveEdit = async () => {
+    setIsSaving(true);
+    try {
+      const newDataUrl = encodeToDataUrl(editContent, item.mimeType);
+      const resp = await fetch(`/api/files/${item.id}/content`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ dataUrl: newDataUrl, size: new Blob([editContent]).size }),
+      });
+      if (!resp.ok) throw new Error("Save failed");
+      toast.success("File saved");
+      setIsEditing(false);
+      onSaved?.();
+    } catch {
+      toast.error("Failed to save file");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isEditing) {
     return (
-      <div className="flex-1 overflow-y-auto rounded-xl bg-black/20 border border-white/5 p-5 min-h-0">
-        <div
-          className="prose prose-invert prose-sm max-w-none prose-headings:font-semibold prose-code:bg-white/10 prose-code:px-1 prose-code:rounded prose-blockquote:border-l-primary/50"
-          dangerouslySetInnerHTML={{ __html: html }}
+      <div className="flex-1 flex flex-col gap-2 min-h-0">
+        <div className="flex items-center justify-between px-1 flex-shrink-0">
+          <span className="text-xs text-muted-foreground">Editing — changes are not auto-saved</span>
+          <div className="flex gap-1.5">
+            <Button variant="ghost" size="sm" onClick={cancelEdit} disabled={isSaving} className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-white">
+              <XCircle className="w-3.5 h-3.5" /> Cancel
+            </Button>
+            <Button size="sm" onClick={saveEdit} disabled={isSaving} className="h-7 px-2.5 text-xs gap-1.5 bg-primary hover:bg-primary/90 text-white">
+              {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              Save
+            </Button>
+          </div>
+        </div>
+        <textarea
+          ref={textareaRef}
+          value={editContent}
+          onChange={e => setEditContent(e.target.value)}
+          spellCheck={false}
+          className="flex-1 w-full p-4 text-sm font-mono leading-relaxed bg-black/25 border border-primary/30 rounded-xl text-foreground resize-none focus:outline-none focus:border-primary/60 min-h-0"
+          style={{ tabSize: 2 }}
         />
       </div>
     );
   }
 
+  if (!content) {
+    return (
+      <div className="flex-1 flex flex-col gap-2 min-h-0">
+        <PlaceholderView icon={<FileText className="w-14 h-14 opacity-15" />} label={item.name} note="Text content unavailable" />
+      </div>
+    );
+  }
+
+  if (category === "markdown") {
+    return (
+      <div className="flex-1 flex flex-col gap-2 min-h-0">
+        <div className="flex justify-end flex-shrink-0 px-1">
+          <Button variant="ghost" size="sm" onClick={startEdit} className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-white">
+            <Edit2 className="w-3 h-3" /> Edit
+          </Button>
+        </div>
+        <div className="flex-1 overflow-y-auto rounded-xl bg-black/20 border border-white/5 p-5 min-h-0">
+          <div
+            className="prose prose-invert prose-sm max-w-none prose-headings:font-semibold prose-code:bg-white/10 prose-code:px-1 prose-code:rounded prose-blockquote:border-l-primary/50"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex-1 overflow-hidden rounded-xl bg-black/20 border border-white/5 min-h-0">
-      <pre className="w-full h-full p-5 text-sm font-mono leading-relaxed text-muted-foreground overflow-auto whitespace-pre-wrap break-all scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
-        {content}
-      </pre>
+    <div className="flex-1 flex flex-col gap-2 min-h-0">
+      <div className="flex justify-end flex-shrink-0 px-1">
+        <Button variant="ghost" size="sm" onClick={startEdit} className="h-7 px-2.5 text-xs gap-1.5 text-muted-foreground hover:text-white">
+          <Edit2 className="w-3 h-3" /> Edit
+        </Button>
+      </div>
+      <div className="flex-1 overflow-hidden rounded-xl bg-black/20 border border-white/5 min-h-0">
+        <pre className="w-full h-full p-5 text-sm font-mono leading-relaxed text-muted-foreground overflow-auto whitespace-pre-wrap break-all scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+          {content}
+        </pre>
+      </div>
     </div>
   );
 }
@@ -227,19 +327,21 @@ function PdfViewer({ item, dataUrl }: { item: FileItem; dataUrl: string | null }
     return () => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); };
   }, [dataUrl]);
 
+  if (!blobUrl && !dataUrl) {
+    return <PlaceholderView icon={<FileText className="w-14 h-14 opacity-15 text-red-400" />} label={item.name} note="PDF preview unavailable" />;
+  }
+
   if (!blobUrl) {
     return (
-      <PlaceholderView
-        icon={<FileText className="w-14 h-14 opacity-15 text-red-400" />}
-        label={item.name}
-        note="Loading PDF…"
-      />
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/40" />
+      </div>
     );
   }
 
   return (
     <iframe
-      src={blobUrl}
+      src={`${blobUrl}#toolbar=1&navpanes=1`}
       className="flex-1 w-full rounded-xl border border-white/5 min-h-0"
       title={item.name}
     />
@@ -285,15 +387,15 @@ export function FilePreviewModal({
   const queryClient = useQueryClient();
   const starMutation = useStarFile();
 
-  const { data: fullFile, isLoading: isLoadingContent } = useGetFile(item?.id ?? 0, {
+  const { data: fullFile, isLoading: isLoadingContent, refetch } = useGetFile(item?.id ?? 0, {
     query: {
       queryKey: getGetFileQueryKey(item?.id ?? 0),
       enabled: open && !!item?.id,
-      staleTime: 5 * 60_000,
+      staleTime: 30_000,
     },
   });
 
-  const dataUrl = (fullFile as (FileItem & { dataUrl?: string | null }) | undefined)?.dataUrl ?? item?.thumbnailUrl ?? null;
+  const dataUrl = (fullFile as (FileItem & { dataUrl?: string | null }) | undefined)?.dataUrl ?? null;
 
   const handleStar = () => {
     if (!item) return;
@@ -309,18 +411,25 @@ export function FilePreviewModal({
   };
 
   const handleDownload = () => {
-    if (!dataUrl) {
-      toast.info("File content not available for download");
-      return;
-    }
+    const src = dataUrl ?? item?.thumbnailUrl ?? null;
+    if (!src) { toast.info("File content not available for download"); return; }
     const a = document.createElement("a");
-    a.href = dataUrl;
+    a.href = src;
     a.download = item?.name ?? "download";
     a.click();
   };
 
+  const handleSaved = () => {
+    if (item) {
+      queryClient.invalidateQueries({ queryKey: getGetFileQueryKey(item.id) });
+      queryClient.invalidateQueries({ queryKey: getListFilesQueryKey() });
+      refetch();
+    }
+  };
+
   if (!item) return null;
   const category = getFileCategory(item.mimeType);
+  const isEditable = category === "text" || category === "code" || category === "markdown";
 
   const renderContent = () => {
     if (isLoadingContent && category !== "image") {
@@ -337,7 +446,7 @@ export function FilePreviewModal({
       case "pdf":      return <PdfViewer item={item} dataUrl={dataUrl} />;
       case "text":
       case "code":
-      case "markdown": return <TextViewer item={item} dataUrl={dataUrl} category={category} />;
+      case "markdown": return <TextViewer item={item} dataUrl={dataUrl} category={category} onSaved={handleSaved} />;
       default:         return <OtherViewer item={item} />;
     }
   };
@@ -357,39 +466,19 @@ export function FilePreviewModal({
             </div>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-            <Button
-              variant="ghost" size="icon"
-              onClick={handleStar}
-              className="rounded-full w-8 h-8 hover:bg-white/10"
-              title={item.starred ? "Unstar" : "Star"}
-            >
+            <Button variant="ghost" size="icon" onClick={handleStar} className="rounded-full w-8 h-8 hover:bg-white/10" title={item.starred ? "Unstar" : "Star"}>
               <Star className={`w-4 h-4 ${item.starred ? "fill-amber-400 text-amber-400" : ""}`} />
             </Button>
             {onShare && (
-              <Button
-                variant="ghost" size="icon"
-                onClick={() => { onShare(item); onOpenChange(false); }}
-                className="rounded-full w-8 h-8 hover:bg-white/10"
-                title="Share"
-              >
+              <Button variant="ghost" size="icon" onClick={() => { onShare(item); onOpenChange(false); }} className="rounded-full w-8 h-8 hover:bg-white/10" title="Share">
                 <Share2 className="w-4 h-4" />
               </Button>
             )}
-            <Button
-              variant="ghost" size="icon"
-              className="rounded-full w-8 h-8 hover:bg-white/10"
-              title="Download"
-              onClick={handleDownload}
-            >
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/10" title="Download" onClick={handleDownload}>
               <Download className="w-4 h-4" />
             </Button>
             <div className="w-px h-4 bg-white/10 mx-0.5" />
-            <Button
-              variant="ghost" size="icon"
-              onClick={() => onOpenChange(false)}
-              className="rounded-full w-8 h-8 hover:bg-white/10"
-              title="Close"
-            >
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="rounded-full w-8 h-8 hover:bg-white/10" title="Close">
               <X className="w-4 h-4" />
             </Button>
           </div>
