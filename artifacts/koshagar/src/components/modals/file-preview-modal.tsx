@@ -134,44 +134,27 @@ function ImageViewer({ item, dataUrl }: { item: FileItem; dataUrl: string | null
   );
 }
 
-function VideoViewer({ item, dataUrl }: { item: FileItem; dataUrl: string | null }) {
-  const [blobUrl, setBlobUrl] = React.useState<string | null>(null);
-  const [converting, setConverting] = React.useState(false);
+function VideoViewer({ item }: { item: FileItem }) {
+  const [error, setError] = React.useState(false);
 
-  React.useEffect(() => {
-    if (!dataUrl) return;
-    setConverting(true);
-    const url = dataUrlToBlobUrl(dataUrl, item.mimeType);
-    setBlobUrl(url);
-    setConverting(false);
-    return () => { if (url.startsWith("blob:")) URL.revokeObjectURL(url); };
-  }, [dataUrl, item.mimeType]);
-
-  const src = blobUrl || null;
+  if (error) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-black rounded-xl min-h-0">
+        <PlaceholderView icon={<Video className="w-14 h-14 opacity-15" />} label={item.name} note="Video preview unavailable" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex items-center justify-center bg-black rounded-xl overflow-hidden min-h-0">
-      {converting ? (
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Loader2 className="w-8 h-8 animate-spin" />
-          <p className="text-sm">Preparing video…</p>
-        </div>
-      ) : src ? (
-        <video
-          controls
-          preload="metadata"
-          className="max-w-full max-h-full w-full h-full object-contain"
-          src={src}
-          playsInline
-        />
-      ) : !dataUrl ? (
-        <PlaceholderView icon={<Video className="w-14 h-14 opacity-15" />} label={item.name} note="Video preview unavailable" />
-      ) : (
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <Loader2 className="w-8 h-8 animate-spin" />
-          <p className="text-sm">Loading video…</p>
-        </div>
-      )}
+      <video
+        controls
+        preload="metadata"
+        className="max-w-full max-h-full w-full h-full object-contain"
+        src={`/api/files/${item.id}/stream`}
+        playsInline
+        onError={() => setError(true)}
+      />
     </div>
   );
 }
@@ -432,7 +415,7 @@ export function FilePreviewModal({
   const isEditable = category === "text" || category === "code" || category === "markdown";
 
   const renderContent = () => {
-    if (isLoadingContent && category !== "image") {
+    if (isLoadingContent && category !== "image" && category !== "video") {
       return (
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground/40" />
@@ -441,7 +424,7 @@ export function FilePreviewModal({
     }
     switch (category) {
       case "image":    return <ImageViewer item={item} dataUrl={dataUrl} />;
-      case "video":    return <VideoViewer item={item} dataUrl={dataUrl} />;
+      case "video":    return <VideoViewer item={item} />;
       case "audio":    return <AudioViewer item={item} dataUrl={dataUrl} />;
       case "pdf":      return <PdfViewer item={item} dataUrl={dataUrl} />;
       case "text":

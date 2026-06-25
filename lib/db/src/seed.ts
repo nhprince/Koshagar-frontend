@@ -296,6 +296,20 @@ async function seed() {
     allowDownload: true, viewCount: 14, downloadCount: 7,
   });
 
+  // Password-protected share for Budget 2025.csv (password: "budget2025")
+  const [budget] = await db.select().from(filesTable).where(eq(filesTable.name, "Budget 2025.csv"));
+  if (budget) {
+    const t5 = token();
+    const pwHash = crypto.createHash("sha256").update("budget2025" + "koshagar_share_salt").digest("hex");
+    await db.update(filesTable).set({ shareToken: t5 }).where(eq(filesTable.id, budget.id));
+    await db.insert(sharesTable).values({
+      token: t5, fileId: budget.id, ownerId: admin.id,
+      allowDownload: true,
+      passwordHash: pwHash,
+      viewCount: 3, downloadCount: 0,
+    });
+  }
+
   // ── Activity log ──────────────────────────────────────────────────────────
   console.log("📋  Seeding activity log…");
 

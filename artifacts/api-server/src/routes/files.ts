@@ -96,7 +96,7 @@ router.get("/files/shared", requireAuth, async (req, res) => {
 });
 
 router.post("/files/upload", requireAuth, async (req, res) => {
-  const { name, mimeType, size, folderId, dataUrl } = req.body;
+  const { name, mimeType, size, folderId, dataUrl, thumbnailUrl } = req.body;
   if (!name || !mimeType || size === undefined) {
     res.status(400).json({ error: "name, mimeType, and size are required" });
     return;
@@ -110,7 +110,7 @@ router.post("/files/upload", requireAuth, async (req, res) => {
     folderId: folderId ?? null,
     ownerId: req.userId!,
     dataUrl: dataUrl ?? null,
-    thumbnailUrl: mimeType.startsWith("image/") ? dataUrl ?? null : null,
+    thumbnailUrl: thumbnailUrl ?? (mimeType.startsWith("image/") ? dataUrl ?? null : null),
   }).returning();
 
   await logActivity(req.userId!, "upload", name, file.id);
@@ -135,6 +135,49 @@ router.get("/files/:id", requireAuth, async (req, res) => {
     return;
   }
   res.json({ ...toFileItem(file), dataUrl: file.dataUrl ?? null });
+});
+
+router.get("/files/:id/stream", requireAuth, async (req, res) => {
+  const id = parseInt(req.params.id as string);
+  const [file] = await db.select().from(filesTable)
+    .where(and(eq(filesTable.id, id), eq(filesTable.ownerId, req.userId!)));
+
+  if (!file || !file.dataUrl) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  const match = file.dataUrl.match(/^data:[^;]+;base64,(.+)$/s);
+  if (!match) {
+    res.status(400).json({ error: "Invalid file data" });
+    return;
+  }
+
+  const buffer = Buffer.from(match[1].replace(/\s/g, ""), "base64");
+  const total = buffer.length;
+  const rangeHeader = req.headers.range;
+
+  res.setHeader("Accept-Ranges", "bytes");
+  res.setHeader("Content-Type", file.mimeType);
+  res.setHeader("Content-Disposition", `inline; filename="${encodeURIComponent(file.name)}"`);
+  res.setHeader("Cache-Control", "private, no-store");
+
+  if (rangeHeader) {
+    const rangeStr = rangeHeader.replace(/bytes=/, "");
+    const parts = rangeStr.split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : total - 1;
+    const clampedEnd = Math.min(end, total - 1);
+    const chunkSize = clampedEnd - start + 1;
+
+    res.status(206);
+    res.setHeader("Content-Range", `bytes ${start}-${clampedEnd}/${total}`);
+    res.setHeader("Content-Length", chunkSize);
+    res.end(buffer.subarray(start, clampedEnd + 1));
+  } else {
+    res.setHeader("Content-Length", total);
+    res.status(200).end(buffer);
+  }
 });
 
 router.patch("/files/:id", requireAuth, async (req, res) => {

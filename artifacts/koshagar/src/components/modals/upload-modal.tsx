@@ -101,18 +101,25 @@ export function UploadModal({
           setUploadState(entry.id, { progress: Math.round(10 + pct * 0.5) });
         });
 
+        let thumbnailUrl: string | null = null;
+        if (entry.file.type.startsWith("video/")) {
+          thumbnailUrl = await generateVideoThumbnail(entry.file);
+        }
+
         setUploadState(entry.id, { status: "uploading", progress: 65 });
 
         await new Promise<void>((resolve, reject) => {
           uploadMutation.mutate(
             {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               data: {
                 name: entry.file.name,
                 mimeType: entry.file.type || "application/octet-stream",
                 size: entry.file.size,
                 folderId: folderId ?? null,
                 dataUrl,
-              },
+                ...(thumbnailUrl ? { thumbnailUrl } : {}),
+              } as any,
             },
             {
               onSuccess: () => {
@@ -281,6 +288,46 @@ export function UploadModal({
       </DialogContent>
     </Dialog>
   );
+}
+
+function generateVideoThumbnail(file: File): Promise<string | null> {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    const url = URL.createObjectURL(file);
+    video.src = url;
+
+    const cleanup = (result: string | null) => {
+      clearTimeout(timeout);
+      URL.revokeObjectURL(url);
+      resolve(result);
+    };
+
+    const timeout = setTimeout(() => cleanup(null), 8000);
+
+    video.onloadedmetadata = () => {
+      video.currentTime = Math.min(1.0, video.duration * 0.1);
+    };
+
+    video.onseeked = () => {
+      try {
+        const aspect = (video.videoWidth || 16) / (video.videoHeight || 9);
+        const canvas = document.createElement("canvas");
+        canvas.width = 320;
+        canvas.height = Math.round(320 / aspect);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { cleanup(null); return; }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const thumb = canvas.toDataURL("image/jpeg", 0.75);
+        cleanup(thumb.length > 200 ? thumb : null);
+      } catch {
+        cleanup(null);
+      }
+    };
+
+    video.onerror = () => cleanup(null);
+  });
 }
 
 function readFileAsDataUrl(file: File, onProgress?: (pct: number) => void): Promise<string> {
