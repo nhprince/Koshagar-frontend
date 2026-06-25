@@ -10,6 +10,7 @@ A full-featured dark glassmorphism cloud storage web app — a Google Drive alte
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/db run seed` — seed demo data (wipes existing data, recreates demo accounts)
 - Required env: `DATABASE_URL` — Postgres connection string, `SESSION_SECRET` — session signing key
 
 ## Stack
