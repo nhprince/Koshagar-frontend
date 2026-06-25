@@ -25,10 +25,12 @@ export function FileCard({
 }) {
   const isFolder = item.type === "folder";
   const [, setLocation] = useLocation();
+  const isImage = item.mimeType.startsWith("image/");
+  const hasThumbnail = isImage && !!item.thumbnailUrl;
 
   const getIcon = () => {
     if (isFolder) return <Folder className="w-9 h-9 text-primary fill-primary/15" />;
-    if (item.mimeType.startsWith("image/")) return <ImageIcon className="w-9 h-9 text-blue-400" />;
+    if (isImage) return <ImageIcon className="w-9 h-9 text-blue-400" />;
     if (item.mimeType.startsWith("video/")) return <Video className="w-9 h-9 text-rose-400" />;
     if (item.mimeType.startsWith("audio/")) return <Music className="w-9 h-9 text-amber-400" />;
     if (item.mimeType.includes("pdf")) return <FileText className="w-9 h-9 text-red-500" />;
@@ -42,7 +44,7 @@ export function FileCard({
 
   const getCardAccent = () => {
     if (isFolder) return "hover:border-primary/30 hover:shadow-primary/10";
-    if (item.mimeType.startsWith("image/")) return "hover:border-blue-500/30 hover:shadow-blue-500/10";
+    if (isImage) return "hover:border-blue-500/30 hover:shadow-blue-500/10";
     if (item.mimeType.startsWith("video/")) return "hover:border-rose-500/30 hover:shadow-rose-500/10";
     if (item.mimeType.startsWith("audio/")) return "hover:border-amber-500/30 hover:shadow-amber-500/10";
     return "hover:border-white/15 hover:shadow-white/5";
@@ -50,7 +52,7 @@ export function FileCard({
 
   const getCardBg = () => {
     if (isFolder) return "bg-primary/5";
-    if (item.mimeType.startsWith("image/")) return "bg-blue-500/5";
+    if (isImage) return "bg-blue-500/5";
     if (item.mimeType.startsWith("video/")) return "bg-rose-500/5";
     if (item.mimeType.startsWith("audio/")) return "bg-amber-500/5";
     if (item.mimeType.includes("pdf")) return "bg-red-500/5";
@@ -71,7 +73,7 @@ export function FileCard({
       whileHover={{ y: -3 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       onClick={handleCardClick}
-      className={`group relative flex flex-col rounded-2xl border border-white/8 cursor-pointer transition-all duration-200 overflow-hidden shadow-sm hover:shadow-lg ${getCardBg()} ${getCardAccent()}`}
+      className={`group relative flex flex-col rounded-2xl border border-white/8 cursor-pointer transition-all duration-200 overflow-hidden shadow-sm hover:shadow-lg ${hasThumbnail ? "bg-black/20" : getCardBg()} ${getCardAccent()}`}
     >
       {item.starred && (
         <div className="absolute top-2.5 left-2.5 z-10">
@@ -97,14 +99,26 @@ export function FileCard({
         </FileActionsMenu>
       </div>
 
-      <div className="flex items-center justify-center py-7 px-4">
-        <motion.div
-          whileHover={{ scale: 1.08 }}
-          transition={{ type: "spring", stiffness: 400, damping: 12 }}
-        >
-          {getIcon()}
-        </motion.div>
-      </div>
+      {hasThumbnail ? (
+        <div className="relative h-[90px] overflow-hidden">
+          <img
+            src={item.thumbnailUrl!}
+            alt={item.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+        </div>
+      ) : (
+        <div className="flex items-center justify-center py-7 px-4">
+          <motion.div
+            whileHover={{ scale: 1.08 }}
+            transition={{ type: "spring", stiffness: 400, damping: 12 }}
+          >
+            {getIcon()}
+          </motion.div>
+        </div>
+      )}
 
       <div className="px-3 pb-3 border-t border-white/5 pt-2.5 bg-white/3">
         <p className="font-medium text-sm text-foreground truncate leading-tight">{item.name}</p>

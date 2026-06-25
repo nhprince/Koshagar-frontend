@@ -152,6 +152,208 @@ router.delete("/share/:token", requireAuth, async (req, res) => {
   res.status(204).send();
 });
 
+router.get("/share/:token/browse", async (req, res) => {
+  const token = req.params.token as string;
+  const password = req.query.password as string | undefined;
+  const subfolderId = req.query.folderId ? parseInt(req.query.folderId as string) : null;
+
+  const [share] = await db.select().from(sharesTable).where(eq(sharesTable.token, token));
+
+  if (!share) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  if (share.expiresAt && share.expiresAt < new Date()) {
+    res.status(410).json({ error: "Share link expired" });
+    return;
+  }
+
+  if (share.passwordHash) {
+    if (!password) {
+      res.status(401).json({ error: "Password required", requiresPassword: true });
+      return;
+    }
+    const hash = hashSharePassword(password);
+    if (hash !== share.passwordHash) {
+      res.status(401).json({ error: "Invalid password" });
+      return;
+    }
+  }
+
+  const [rootFolder] = await db.select().from(filesTable)
+    .where(and(eq(filesTable.id, share.fileId), eq(filesTable.type, "folder")));
+
+  if (!rootFolder) {
+    res.status(400).json({ error: "Shared item is not a folder" });
+    return;
+  }
+
+  const targetFolderId = subfolderId ?? rootFolder.id;
+
+  if (subfolderId && subfolderId !== rootFolder.id) {
+    const [subcheck] = await db.select().from(filesTable)
+      .where(and(eq(filesTable.id, subfolderId), eq(filesTable.ownerId, rootFolder.ownerId), eq(filesTable.type, "folder")));
+    if (!subcheck) {
+      res.status(403).json({ error: "Access denied" });
+      return;
+    }
+  }
+
+  const contents = await db.select().from(filesTable)
+    .where(and(eq(filesTable.folderId, targetFolderId), eq(filesTable.ownerId, rootFolder.ownerId), eq(filesTable.trashed, false)));
+
+  const breadcrumb: { id: number; name: string }[] = [];
+  if (subfolderId && subfolderId !== rootFolder.id) {
+    let current: typeof filesTable.$inferSelect | undefined;
+    let currentId = subfolderId;
+    const seen = new Set<number>();
+    while (currentId !== rootFolder.id) {
+      if (seen.has(currentId)) break;
+      seen.add(currentId);
+      const [f] = await db.select().from(filesTable).where(eq(filesTable.id, currentId));
+      if (!f || !f.folderId) break;
+      current = f;
+      breadcrumb.unshift({ id: f.id, name: f.name });
+      currentId = f.folderId;
+    }
+  }
+
+  const folders = contents.filter(c => c.type === "folder").map(f => ({
+    id: f.id, name: f.name, type: f.type, mimeType: f.mimeType, size: f.size,
+    thumbnailUrl: f.thumbnailUrl ?? null, createdAt: f.createdAt.toISOString(), updatedAt: f.updatedAt.toISOString(),
+  }));
+  const files = contents.filter(c => c.type === "file").map(f => ({
+    id: f.id, name: f.name, type: f.type, mimeType: f.mimeType, size: f.size,
+    thumbnailUrl: f.thumbnailUrl ?? null, createdAt: f.createdAt.toISOString(), updatedAt: f.updatedAt.toISOString(),
+  }));
+
+  const [owner] = await db.select().from(usersTable).where(eq(usersTable.id, rootFolder.ownerId));
+
+  res.json({
+    rootFolder: { id: rootFolder.id, name: rootFolder.name },
+    currentFolder: { id: targetFolderId, name: subfolderId && subfolderId !== rootFolder.id ? (breadcrumb[breadcrumb.length - 1]?.name ?? rootFolder.name) : rootFolder.name },
+    breadcrumb,
+    folders,
+    files,
+    allowDownload: share.allowDownload,
+    sharedBy: owner?.name ?? "Unknown",
+  });
+});
+
+router.get("/share/:token/file/:fileId/download", async (req, res) => {
+  const token = req.params.token as string;
+  const fileId = parseInt(req.params.fileId as string);
+  const password = req.query.password as string | undefined;
+
+  const [share] = await db.select().from(sharesTable).where(eq(sharesTable.token, token));
+
+  if (!share) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  if (share.expiresAt && share.expiresAt < new Date()) {
+    res.status(410).json({ error: "Share link expired" });
+    return;
+  }
+
+  if (!share.allowDownload) {
+    res.status(403).json({ error: "Download not allowed" });
+    return;
+  }
+
+  if (share.passwordHash) {
+    if (!password) {
+      res.status(401).json({ error: "Password required" });
+      return;
+    }
+    const hash = hashSharePassword(password);
+    if (hash !== share.passwordHash) {
+      res.status(401).json({ error: "Invalid password" });
+      return;
+    }
+  }
+
+  const [rootFolder] = await db.select().from(filesTable)
+    .where(and(eq(filesTable.id, share.fileId), eq(filesTable.type, "folder")));
+  if (!rootFolder) {
+    res.status(400).json({ error: "Not a shared folder" });
+    return;
+  }
+
+  const [file] = await db.select().from(filesTable)
+    .where(and(eq(filesTable.id, fileId), eq(filesTable.ownerId, rootFolder.ownerId), eq(filesTable.type, "file")));
+
+  if (!file) {
+    res.status(404).json({ error: "File not found in shared folder" });
+    return;
+  }
+
+  await db.update(sharesTable)
+    .set({ downloadCount: share.downloadCount + 1 })
+    .where(eq(sharesTable.token, token));
+
+  res.json({
+    dataUrl: file.dataUrl ?? null,
+    name: file.name,
+    mimeType: file.mimeType,
+    size: file.size,
+  });
+});
+
+router.get("/share/:token/download", async (req, res) => {
+  const token = req.params.token as string;
+  const password = req.query.password as string | undefined;
+
+  const [share] = await db.select().from(sharesTable).where(eq(sharesTable.token, token));
+
+  if (!share) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  if (share.expiresAt && share.expiresAt < new Date()) {
+    res.status(410).json({ error: "Share link expired" });
+    return;
+  }
+
+  if (!share.allowDownload) {
+    res.status(403).json({ error: "Download not allowed" });
+    return;
+  }
+
+  if (share.passwordHash) {
+    if (!password) {
+      res.status(401).json({ error: "Password required", requiresPassword: true });
+      return;
+    }
+    const hash = hashSharePassword(password);
+    if (hash !== share.passwordHash) {
+      res.status(401).json({ error: "Invalid password" });
+      return;
+    }
+  }
+
+  const [file] = await db.select().from(filesTable).where(eq(filesTable.id, share.fileId));
+
+  if (!file) {
+    res.status(404).json({ error: "File not found" });
+    return;
+  }
+
+  await db.update(sharesTable)
+    .set({ downloadCount: share.downloadCount + 1 })
+    .where(eq(sharesTable.token, token));
+
+  res.json({
+    dataUrl: file.dataUrl ?? null,
+    name: file.name,
+    mimeType: file.mimeType,
+    size: file.size,
+  });
+});
+
 router.get("/share/:token/stats", requireAuth, async (req, res) => {
   const token = req.params.token as string;
   const [share] = await db.select().from(sharesTable)

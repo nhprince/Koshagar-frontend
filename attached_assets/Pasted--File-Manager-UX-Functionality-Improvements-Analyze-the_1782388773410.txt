@@ -1,0 +1,167 @@
+# File Manager UX & Functionality Improvements
+
+Analyze the entire file management system deeply, including its UI, UX, upload logic, sharing workflow, folder management, and overall user experience. Identify the best approach to implement the following improvements while maintaining performance, scalability, and production readiness.
+
+## 1. Upload Experience Improvements
+
+### Current Problem
+
+When users upload files, there is no visual feedback indicating upload progress. Users are forced to wait without knowing whether the upload is working, stalled, or completed.
+
+### Required Improvements
+
+* Add a clear upload progress indicator (progress bar and/or percentage).
+* Show upload status states:
+
+  * Uploading
+  * Processing
+  * Completed
+  * Failed
+* Support multiple simultaneous uploads with individual progress tracking.
+* Ensure uploads feel responsive and reliable.
+
+---
+
+## 2. File Thumbnail & Preview System
+
+### Current Problem
+
+Files are displayed without meaningful previews, forcing users to open files just to identify them.
+
+### Required Improvements
+
+* Display thumbnail previews for supported file types:
+
+  * Images
+  * PDFs
+  * Videos
+  * Other previewable formats where possible
+* Show appropriate file-type icons for unsupported formats.
+* Make file identification quick and intuitive without requiring file opening.
+
+---
+
+## 3. Recent Files Performance
+
+### Current Problem
+
+The "Recent" tab frequently shows a loading spinner and feels slow.
+
+### Required Improvements
+
+* Investigate the cause of slow loading.
+* Optimize data fetching, caching, and rendering where possible.
+* Reduce perceived loading time.
+* This is lower priority and can be addressed after core functionality is completed.
+
+---
+
+## 4. Drag-and-Drop File Management
+
+### Required Feature
+
+Implement a modern drag-and-drop workflow similar to Google Drive and other advanced cloud storage platforms.
+
+### Expected Behavior
+
+* Users can open any folder and drag files directly into it.
+* Support dropping files from the operating system.
+* Show drag-over visual feedback.
+* Support uploading multiple files simultaneously.
+* Ensure uploads begin automatically after dropping files.
+
+---
+
+## 5. File Creation Features
+
+### Required Feature
+
+Allow users to create files directly from the application.
+
+### Examples
+
+* `.txt`
+* `.md`
+* Other common lightweight file formats
+
+### Expected Behavior
+
+* Users can create files from a "New" menu.
+* Newly created files should immediately appear in the current folder.
+* Support inline naming and editing workflows.
+
+---
+
+## 6. Share Dialog UX Redesign
+
+### Current Problem
+
+When a user clicks "Share," the share link is generated successfully, but the generated link is not displayed immediately. Users must close the dialog and navigate elsewhere to retrieve it.
+
+### Required Improvements
+
+* Display the generated share link instantly inside the same dialog.
+* Allow one-click copying of the link.
+* Clearly indicate when sharing is enabled.
+* Eliminate unnecessary navigation steps.
+
+### Goal
+
+Make the sharing workflow fast, intuitive, and frictionless.
+
+---
+
+## 7. Sharing System Reliability
+
+### Current Problems
+
+* Shared file pages render correctly.
+* Download button does not work reliably.
+* Sharing behavior feels incomplete and inconsistent.
+
+### Required Improvements
+
+* Audit the entire sharing architecture.
+* Ensure downloads work consistently.
+* Add proper error handling and fallback states.
+* Verify permissions, file access, and sharing logic.
+* Make sharing functionality production-ready and dependable.
+
+---
+
+## 8. Folder Sharing Experience (Google Drive Style)
+
+### Current Limitation
+
+Folder sharing lacks a complete browsing experience.
+
+### Required Improvements
+
+Shared folders should function similarly to Google Drive:
+
+* Browse folder contents.
+* Navigate nested folders.
+* Preview files.
+* Download individual files.
+* Download entire folders.
+* View folder structure naturally.
+* Support public and permission-based access where applicable.
+
+### Goal
+
+Shared folders should feel like a complete cloud-storage experience rather than a simple file listing.
+
+---
+
+# Overall Objective
+
+The entire file management system should be refined to feel:
+
+* Fast
+* Responsive
+* Modern
+* Intuitive
+* Reliable
+* Production-ready
+
+Focus on creating a polished user experience comparable to modern cloud storage platforms such as Google Drive, Dropbox, and OneDrive while maintaining clean architecture, scalability, and robust backend logic.

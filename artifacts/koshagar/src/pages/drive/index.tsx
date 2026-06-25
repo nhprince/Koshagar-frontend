@@ -1,26 +1,39 @@
 import React, { useState } from "react";
 import { useListFiles, FileItem } from "@workspace/api-client-react";
 import { FileGrid, ViewMode } from "@/components/drive/file-grid";
-import { LayoutGrid, List, Plus, Loader2, FolderOpen } from "lucide-react";
+import { LayoutGrid, List, Plus, Loader2, FolderOpen, FileText, Folder, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CreateFolderModal } from "@/components/modals/create-folder-modal";
+import { CreateFileModal } from "@/components/modals/create-file-modal";
 import { ShareModal } from "@/components/modals/share-modal";
 import { RenameModal } from "@/components/modals/rename-modal";
 import { MoveFolderModal } from "@/components/modals/move-folder-modal";
 import { FilePreviewModal } from "@/components/modals/file-preview-modal";
-import { UploadOpenContext } from "@/components/layout/drive-layout";
+import { UploadOpenContext, CurrentFolderContext } from "@/components/layout/drive-layout";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Drive() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const { data, isLoading } = useListFiles({ folderId: null });
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [createFileOpen, setCreateFileOpen] = useState(false);
   const [shareItem, setShareItem] = useState<FileItem | null>(null);
   const [renameItem, setRenameItem] = useState<FileItem | null>(null);
   const [moveItem, setMoveItem] = useState<FileItem | null>(null);
   const [previewItem, setPreviewItem] = useState<FileItem | null>(null);
 
   const uploadContext = React.useContext(UploadOpenContext);
+  const folderContext = React.useContext(CurrentFolderContext);
+
+  React.useEffect(() => {
+    folderContext?.setFolderId(null);
+  }, []);
 
   const folders = data?.folders || [];
   const files = data?.files || [];
@@ -64,14 +77,28 @@ export default function Drive() {
               <List className="w-3.5 h-3.5" />
             </Button>
           </div>
-          <Button
-            variant="ghost"
-            className="rounded-full h-8 text-sm hover:bg-white/10 border border-white/10 px-3 gap-1.5"
-            onClick={() => setCreateFolderOpen(true)}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            New Folder
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="rounded-full h-8 text-sm hover:bg-white/10 border border-white/10 px-3 gap-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New
+                <ChevronDown className="w-3 h-3 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" style={{ background: "hsl(var(--card))" }} className="w-44">
+              <DropdownMenuItem onClick={() => setCreateFolderOpen(true)} className="cursor-pointer gap-2">
+                <Folder className="w-4 h-4 text-primary" />
+                New Folder
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCreateFileOpen(true)} className="cursor-pointer gap-2">
+                <FileText className="w-4 h-4 text-emerald-400" />
+                New File
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -107,6 +134,7 @@ export default function Drive() {
       )}
 
       <CreateFolderModal open={createFolderOpen} onOpenChange={setCreateFolderOpen} folderId={null} />
+      <CreateFileModal open={createFileOpen} onOpenChange={setCreateFileOpen} folderId={null} />
       <ShareModal open={!!shareItem} onOpenChange={(v) => !v && setShareItem(null)} item={shareItem} />
       <RenameModal open={!!renameItem} onOpenChange={(v) => !v && setRenameItem(null)} item={renameItem} />
       <MoveFolderModal open={!!moveItem} onOpenChange={(v) => !v && setMoveItem(null)} item={moveItem} />

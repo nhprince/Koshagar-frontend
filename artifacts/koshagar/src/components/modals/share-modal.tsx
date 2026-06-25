@@ -15,7 +15,7 @@ import {
 } from "@workspace/api-client-react";
 import {
   Link2, Copy, Check, Trash2, Eye, Download, Lock, Calendar,
-  Loader2, AlertCircle, Globe, ShieldCheck,
+  Loader2, AlertCircle, Globe, ShieldCheck, CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -96,8 +96,12 @@ function CreateShareView({ item, onClose }: { item: FileItem; onClose: () => voi
   const [expiry, setExpiry] = React.useState("none");
   const [usePassword, setUsePassword] = React.useState(false);
   const [password, setPassword] = React.useState("");
+  const [createdToken, setCreatedToken] = React.useState<string | null>(null);
+  const [copied, setCopied] = React.useState(false);
   const queryClient = useQueryClient();
   const createMutation = useCreateShare();
+
+  const shareLink = createdToken ? `${window.location.origin}/s/${createdToken}` : null;
 
   const handleCreate = () => {
     const ms = getExpiryMs(expiry);
@@ -111,9 +115,9 @@ function CreateShareView({ item, onClose }: { item: FileItem; onClose: () => voi
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
+          setCreatedToken(data.token);
           queryClient.invalidateQueries();
-          toast.success("Share link created");
         },
         onError: () => {
           toast.error("Failed to create link");
@@ -121,6 +125,72 @@ function CreateShareView({ item, onClose }: { item: FileItem; onClose: () => voi
       }
     );
   };
+
+  const handleCopy = () => {
+    if (!shareLink) return;
+    navigator.clipboard.writeText(shareLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      toast.success("Link copied to clipboard");
+    });
+  };
+
+  if (createdToken && shareLink) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.16 }}
+        className="px-6 pb-6 pt-4 space-y-4"
+      >
+        <div className="flex flex-col items-center text-center gap-2 py-2">
+          <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center mb-1">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+          </div>
+          <p className="text-sm font-semibold text-white">Share link created!</p>
+          <p className="text-xs text-muted-foreground">Anyone with this link can view the file.</p>
+        </div>
+
+        <div className="flex gap-2">
+          <Input
+            value={shareLink}
+            readOnly
+            className="h-9 text-xs font-mono bg-white/5 border-white/10 text-white/80 flex-1"
+            onClick={e => (e.target as HTMLInputElement).select()}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleCopy}
+            className="h-9 px-3 border-white/10 hover:bg-white/8 flex-shrink-0"
+          >
+            {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+          </Button>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={onClose}
+            className="flex-1 text-muted-foreground"
+          >
+            Done
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleCopy}
+            className="flex-1 bg-primary hover:bg-primary/90 text-white"
+          >
+            {copied
+              ? <><Check className="w-3.5 h-3.5 mr-1.5" />Copied!</>
+              : <><Copy className="w-3.5 h-3.5 mr-1.5" />Copy link</>}
+          </Button>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div

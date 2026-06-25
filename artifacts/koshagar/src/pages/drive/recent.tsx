@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useGetRecentFiles, FileItem } from "@workspace/api-client-react";
+import { useGetRecentFiles, getGetRecentFilesQueryKey, FileItem } from "@workspace/api-client-react";
 import { FileGrid, ViewMode } from "@/components/drive/file-grid";
 import { LayoutGrid, List, Loader2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,13 @@ import { FilePreviewModal } from "@/components/modals/file-preview-modal";
 
 export default function Recent() {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const { data: items, isLoading } = useGetRecentFiles();
+  const { data: items, isLoading } = useGetRecentFiles({
+    query: {
+      queryKey: getGetRecentFilesQueryKey(),
+      staleTime: 30_000,
+      refetchOnWindowFocus: true,
+    }
+  });
   const [shareItem, setShareItem] = useState<FileItem | null>(null);
   const [renameItem, setRenameItem] = useState<FileItem | null>(null);
   const [moveItem, setMoveItem] = useState<FileItem | null>(null);
@@ -33,7 +39,7 @@ export default function Recent() {
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight leading-none">Recent</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Recently accessed files</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Recently modified files</p>
           </div>
         </div>
         <div className="flex items-center gap-1 bg-white/5 p-1 rounded-full border border-white/10">

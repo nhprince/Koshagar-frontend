@@ -21,6 +21,7 @@ import { UploadModal } from "../modals/upload-modal";
 import { NotificationsPanel, useNotifications } from "../notifications/notifications-panel";
 
 export const UploadOpenContext = React.createContext<{ setUploadOpen: (v: boolean) => void } | null>(null);
+export const CurrentFolderContext = React.createContext<{ folderId: number | null; setFolderId: (id: number | null) => void } | null>(null);
 
 function formatBytes(bytes: number, decimals = 1) {
   if (!+bytes) return "0 B";
@@ -34,6 +35,10 @@ export default function DriveLayout({ children }: { children?: React.ReactNode }
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [uploadOpen, setUploadOpen] = React.useState(false);
+  const [currentFolderId, setCurrentFolderId] = React.useState<number | null>(null);
+  const [droppedFiles, setDroppedFiles] = React.useState<File[]>([]);
+  const [isDragOver, setIsDragOver] = React.useState(false);
+  const dragCounterRef = React.useRef(0);
   const notifs = useNotifications();
   const [location] = useLocation();
 
@@ -43,34 +48,106 @@ export default function DriveLayout({ children }: { children?: React.ReactNode }
     }
   }, [user, isLoading, setLocation]);
 
+  const handleGlobalDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.types.includes("Files")) {
+      dragCounterRef.current++;
+      setIsDragOver(true);
+    }
+  };
+
+  const handleGlobalDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current--;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setIsDragOver(false);
+    }
+  };
+
+  const handleGlobalDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleGlobalDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounterRef.current = 0;
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setDroppedFiles(Array.from(e.dataTransfer.files));
+      setUploadOpen(true);
+    }
+  };
+
+  const handleUploadClose = (v: boolean) => {
+    setUploadOpen(v);
+    if (!v) setDroppedFiles([]);
+  };
+
   if (isLoading || !user) return null;
 
   return (
-    <UploadOpenContext.Provider value={{ setUploadOpen }}>
-      <div className="flex h-[100dvh] w-full bg-background overflow-hidden selection:bg-primary/30">
-        <Sidebar user={user} />
-        <MobileBottomNav />
-        <div className="flex-1 flex flex-col min-w-0 relative h-full overflow-hidden">
-          <div className="absolute top-0 right-0 w-[60vw] h-[50vw] bg-primary/4 rounded-full blur-[180px] pointer-events-none -z-10" />
-          <Topbar onUploadClick={() => setUploadOpen(true)} notifProps={notifs} />
-          <main className="flex-1 overflow-y-auto px-[clamp(1rem,3vw,2.5rem)] pb-6 z-0 h-full">
-            <AnimatePresence mode="wait">
+    <CurrentFolderContext.Provider value={{ folderId: currentFolderId, setFolderId: setCurrentFolderId }}>
+      <UploadOpenContext.Provider value={{ setUploadOpen }}>
+        <div
+          className="flex h-[100dvh] w-full bg-background overflow-hidden selection:bg-primary/30"
+          onDragEnter={handleGlobalDragEnter}
+          onDragLeave={handleGlobalDragLeave}
+          onDragOver={handleGlobalDragOver}
+          onDrop={handleGlobalDrop}
+        >
+          <Sidebar user={user} />
+          <MobileBottomNav />
+          <div className="flex-1 flex flex-col min-w-0 relative h-full overflow-hidden">
+            <div className="absolute top-0 right-0 w-[60vw] h-[50vw] bg-primary/4 rounded-full blur-[180px] pointer-events-none -z-10" />
+            <Topbar onUploadClick={() => setUploadOpen(true)} notifProps={notifs} />
+            <main className="flex-1 overflow-y-auto px-[clamp(1rem,3vw,2.5rem)] pb-6 z-0 h-full">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={location}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="h-full pt-5"
+                >
+                  {children}
+                </motion.div>
+              </AnimatePresence>
+            </main>
+          </div>
+
+          <AnimatePresence>
+            {isDragOver && (
               <motion.div
-                key={location}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
-                className="h-full pt-5"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.12 }}
+                className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"
               >
-                {children}
+                <div className="absolute inset-4 rounded-3xl border-2 border-dashed border-primary/60 bg-primary/8 backdrop-blur-sm" />
+                <div className="relative z-10 flex flex-col items-center gap-3 text-center">
+                  <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                    <Upload className="w-7 h-7 text-primary" />
+                  </div>
+                  <p className="text-lg font-semibold text-white">Drop files to upload</p>
+                  <p className="text-sm text-muted-foreground">
+                    {currentFolderId ? "Uploading to current folder" : "Uploading to My Drive"}
+                  </p>
+                </div>
               </motion.div>
-            </AnimatePresence>
-          </main>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
-      <UploadModal open={uploadOpen} onOpenChange={setUploadOpen} folderId={undefined} />
-    </UploadOpenContext.Provider>
+        <UploadModal
+          open={uploadOpen}
+          onOpenChange={handleUploadClose}
+          folderId={currentFolderId}
+          initialFiles={droppedFiles.length > 0 ? droppedFiles : undefined}
+        />
+      </UploadOpenContext.Provider>
+    </CurrentFolderContext.Provider>
   );
 }
 
@@ -97,7 +174,6 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
     { href: "/drive/trash", label: "Trash", icon: Trash2 },
   ];
 
-  // Bullet-proof arithmetic: guard against undefined/null/NaN in stale cache responses
   const QUOTA = 10 * 1024 * 1024 * 1024;
   const rawUsed = Number(storage?.usedBytes ?? 0);
   const rawTotal = Number(storage?.totalBytes ?? 0);
@@ -168,13 +244,11 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
       </nav>
 
       <div className="px-3 py-3 border-t border-white/5 space-y-2.5 flex-shrink-0">
-        {/* Storage quota block — always visible; skeleton while loading */}
         <div className={`px-1.5 py-2 rounded-xl transition-colors ${
           usedPct > 90 ? "bg-red-500/8 border border-red-500/15" :
           usedPct > 70 ? "bg-amber-500/8 border border-amber-500/15" :
           "bg-white/3 border border-white/5"
         }`}>
-          {/* Header row */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-1.5">
               <HardDrive className={`w-3 h-3 flex-shrink-0 ${
@@ -197,7 +271,6 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
             )}
           </div>
 
-          {/* Progress bar */}
           <div className="h-1.5 bg-white/8 rounded-full overflow-hidden mb-2">
             {storage ? (
               <motion.div
@@ -211,7 +284,6 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
             )}
           </div>
 
-          {/* Used / Total */}
           {storage ? (
             <div className="flex items-center justify-between">
               <span className={`text-[10px] font-medium tabular-nums ${
@@ -232,7 +304,6 @@ function Sidebar({ user }: { user: { name?: string | null; email?: string | null
             </div>
           )}
 
-          {/* Warning / danger text */}
           {storage && usedPct > 90 && (
             <div className="flex items-center gap-1 mt-1.5">
               <AlertTriangle className="w-2.5 h-2.5 text-red-400 flex-shrink-0" />

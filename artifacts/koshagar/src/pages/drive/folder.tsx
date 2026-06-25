@@ -2,15 +2,22 @@ import React, { useState } from "react";
 import { Link } from "wouter";
 import { useGetFolder, useListFiles, FileItem, getGetFolderQueryKey } from "@workspace/api-client-react";
 import { FileGrid, ViewMode } from "@/components/drive/file-grid";
-import { LayoutGrid, List, Plus, Loader2, ChevronRight, Home } from "lucide-react";
+import { LayoutGrid, List, Plus, Loader2, ChevronRight, Home, FileText, Folder as FolderIcon, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CreateFolderModal } from "@/components/modals/create-folder-modal";
+import { CreateFileModal } from "@/components/modals/create-file-modal";
 import { ShareModal } from "@/components/modals/share-modal";
 import { RenameModal } from "@/components/modals/rename-modal";
 import { MoveFolderModal } from "@/components/modals/move-folder-modal";
 import { FilePreviewModal } from "@/components/modals/file-preview-modal";
-import { UploadOpenContext } from "@/components/layout/drive-layout";
+import { UploadOpenContext, CurrentFolderContext } from "@/components/layout/drive-layout";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Folder({ id }: { id: number }) {
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -20,12 +27,20 @@ export default function Folder({ id }: { id: number }) {
   const { data: filesData, isLoading: filesLoading } = useListFiles({ folderId: id });
 
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [createFileOpen, setCreateFileOpen] = useState(false);
   const [shareItem, setShareItem] = useState<FileItem | null>(null);
   const [renameItem, setRenameItem] = useState<FileItem | null>(null);
   const [moveItem, setMoveItem] = useState<FileItem | null>(null);
   const [previewItem, setPreviewItem] = useState<FileItem | null>(null);
 
   const uploadContext = React.useContext(UploadOpenContext);
+  const folderContext = React.useContext(CurrentFolderContext);
+
+  React.useEffect(() => {
+    folderContext?.setFolderId(id);
+    return () => folderContext?.setFolderId(null);
+  }, [id]);
+
   const folders = filesData?.folders || [];
   const files = filesData?.files || [];
   const items = [...folders, ...files];
@@ -86,14 +101,28 @@ export default function Folder({ id }: { id: number }) {
                 <List className="w-3.5 h-3.5" />
               </Button>
             </div>
-            <Button
-              variant="ghost"
-              className="rounded-full h-8 text-sm hover:bg-white/10 border border-white/10 px-3 gap-1.5"
-              onClick={() => setCreateFolderOpen(true)}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              New Folder
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="rounded-full h-8 text-sm hover:bg-white/10 border border-white/10 px-3 gap-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  New
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" style={{ background: "hsl(var(--card))" }} className="w-44">
+                <DropdownMenuItem onClick={() => setCreateFolderOpen(true)} className="cursor-pointer gap-2">
+                  <FolderIcon className="w-4 h-4 text-primary" />
+                  New Folder
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCreateFileOpen(true)} className="cursor-pointer gap-2">
+                  <FileText className="w-4 h-4 text-emerald-400" />
+                  New File
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
@@ -122,6 +151,7 @@ export default function Folder({ id }: { id: number }) {
       )}
 
       <CreateFolderModal open={createFolderOpen} onOpenChange={setCreateFolderOpen} folderId={id} />
+      <CreateFileModal open={createFileOpen} onOpenChange={setCreateFileOpen} folderId={id} />
       <ShareModal open={!!shareItem} onOpenChange={(v) => !v && setShareItem(null)} item={shareItem} />
       <RenameModal open={!!renameItem} onOpenChange={(v) => !v && setRenameItem(null)} item={renameItem} />
       <MoveFolderModal open={!!moveItem} onOpenChange={(v) => !v && setMoveItem(null)} item={moveItem} />
