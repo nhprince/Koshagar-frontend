@@ -43,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
 
-        <nav className="flex-1 px-2.5 py-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 min-h-0 px-2.5 py-3 space-y-0.5 overflow-y-auto">
           <Link href="/drive">
             <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-muted-foreground hover:text-white hover:bg-white/5 transition-all text-xs cursor-pointer mb-3">
               <ArrowLeft className="w-3.5 h-3.5" />

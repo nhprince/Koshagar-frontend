@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Star, Trash2, FolderInput, Download, Share2, Edit2, Eye } from "lucide-react";
+import { Star, Trash2, FolderInput, Download, Share2, Edit2, Eye, Archive } from "lucide-react";
 
 export function FileActionsMenu({ 
   item, 
@@ -65,9 +65,48 @@ export function FileActionsMenu({
     });
   };
 
-  const handleDownload = (e: React.MouseEvent) => {
+  const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    toast.success(`Downloading ${item.name}…`);
+    const toastId = toast.loading(`Preparing ${item.name}…`);
+    try {
+      const resp = await fetch(`/api/files/${item.id}`, { credentials: "include" });
+      if (!resp.ok) throw new Error("Failed to fetch file");
+      const data = await resp.json();
+      const dataUrl: string = data.dataUrl;
+      if (!dataUrl) throw new Error("No file content");
+
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = item.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(`Downloaded ${item.name}`, { id: toastId });
+    } catch {
+      toast.error("Download failed", { id: toastId });
+    }
+  };
+
+  const handleDownloadZip = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const toastId = toast.loading(`Zipping ${item.name}…`);
+    try {
+      const resp = await fetch(`/api/folders/${item.id}/download-zip`, { credentials: "include" });
+      if (!resp.ok) throw new Error("Failed to create ZIP");
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${item.name}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success(`Downloaded ${item.name}.zip`, { id: toastId });
+    } catch {
+      toast.error("ZIP download failed", { id: toastId });
+    }
   };
 
   return (
@@ -135,6 +174,16 @@ export function FileActionsMenu({
           >
             <Download className="w-4 h-4 mr-2.5" />
             Download
+          </DropdownMenuItem>
+        )}
+
+        {item.type === "folder" && !item.trashed && (
+          <DropdownMenuItem
+            onClick={handleDownloadZip}
+            className="focus:bg-white/10 focus:text-white rounded-lg cursor-pointer text-sm"
+          >
+            <Archive className="w-4 h-4 mr-2.5 text-amber-400" />
+            Download as ZIP
           </DropdownMenuItem>
         )}
 

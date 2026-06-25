@@ -3,6 +3,8 @@ import { db, filesTable, sharesTable, usersTable, activityTable } from "@workspa
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth";
 import crypto from "crypto";
+import * as archiverLib from "archiver";
+const archiverCreate = (archiverLib as any).default ?? archiverLib;
 
 const router = Router();
 
@@ -198,11 +200,14 @@ router.get("/share/:token/browse", async (req, res) => {
     return;
   }
 
-  const targetFolderId = subfolderId ?? rootFolder.id;
+  // Normalize: treat navigating to rootFolder.id same as navigating to root (null)
+  const normalizedSubfolderId = (subfolderId === rootFolder.id) ? null : subfolderId;
 
-  if (subfolderId && subfolderId !== rootFolder.id) {
+  const targetFolderId = normalizedSubfolderId ?? rootFolder.id;
+
+  if (normalizedSubfolderId && normalizedSubfolderId !== rootFolder.id) {
     const [subcheck] = await db.select().from(filesTable)
-      .where(and(eq(filesTable.id, subfolderId), eq(filesTable.ownerId, rootFolder.ownerId), eq(filesTable.type, "folder")));
+      .where(and(eq(filesTable.id, normalizedSubfolderId!), eq(filesTable.ownerId, rootFolder.ownerId), eq(filesTable.type, "folder")));
     if (!subcheck) {
       res.status(403).json({ error: "Access denied" });
       return;
@@ -215,8 +220,8 @@ router.get("/share/:token/browse", async (req, res) => {
   // Breadcrumb = ancestors only (not the current folder itself)
   const breadcrumb: { id: number; name: string }[] = [];
   let currentFolderName = rootFolder.name;
-  if (subfolderId && subfolderId !== rootFolder.id) {
-    const [currentFolderRecord] = await db.select().from(filesTable).where(eq(filesTable.id, subfolderId));
+  if (normalizedSubfolderId) {
+    const [currentFolderRecord] = await db.select().from(filesTable).where(eq(filesTable.id, normalizedSubfolderId));
     currentFolderName = currentFolderRecord?.name ?? rootFolder.name;
     let walkId: number | null = currentFolderRecord?.folderId ?? null;
     const seen = new Set<number>();
@@ -270,10 +275,9 @@ router.get("/share/:token/download-zip", async (req, res) => {
     .where(and(eq(filesTable.id, share.fileId), eq(filesTable.type, "folder")));
   if (!rootFolder) { res.status(400).json({ error: "Not a folder share" }); return; }
 
-  const { default: archiverFn } = await import("archiver");
   res.setHeader("Content-Type", "application/zip");
   res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(rootFolder.name)}.zip"`);
-  const archive = archiverFn("zip", { zlib: { level: 6 } });
+  const archive = archiverCreate("zip", { zlib: { level: 6 } });
   archive.on("error", () => res.end());
   archive.pipe(res);
 

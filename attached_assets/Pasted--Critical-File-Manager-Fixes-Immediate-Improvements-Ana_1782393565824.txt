@@ -1,0 +1,250 @@
+# Critical File Manager Fixes & Immediate Improvements
+
+Analyze the entire file management system, including file creation, editing, sharing, previews, downloads, folder navigation, media handling, and admin dashboard layout. Before implementation, document all findings and add them to the project's Improvements/Issues document for tracking.
+
+**Important:** The previously discussed enhancements are long-term improvements and should NOT be implemented yet. The items below are critical issues and should be prioritized for immediate implementation.
+
+---
+
+# 1. Password-Protected Share Links Broken
+
+## Current Problem
+
+Password-protected shared files/folders are not accessible and display the following error:
+
+> "Unavailable - This share link is invalid or has expired."
+
+## Required Actions
+
+* Audit the entire password-protected sharing flow.
+* Verify token validation logic.
+* Verify password verification logic.
+* Ensure password-protected links remain accessible when valid.
+* Fix expiration detection if incorrectly triggered.
+* Add proper error handling and debugging logs.
+
+---
+
+# 2. Text File Editing System Missing
+
+## Current Problem
+
+Files can be created, but they are always blank and cannot be edited from within the application.
+
+## Required Improvements
+
+Users should be able to:
+
+* Create text files.
+* Open text files.
+* Edit text files.
+* Save changes directly from the browser.
+* Reopen files with changes preserved.
+
+### Supported File Types
+
+At minimum:
+
+* `.txt`
+* `.md`
+* `.html`
+* `.css`
+* `.js`
+* `.json`
+* `.xml`
+* `.yml`
+* `.yaml`
+* `.csv`
+
+The architecture should make it easy to add additional editable file types later.
+
+---
+
+# 3. Improved File Creation Modal
+
+## Current Problem
+
+The file creation UI is functional but visually basic.
+
+## Required Improvements
+
+### File Type Selection
+
+Replace text-only file type options with recognizable file-type icons/logos.
+
+Examples:
+
+* HTML icon
+* CSS icon
+* JavaScript icon
+* Markdown icon
+* JSON icon
+* Text file icon
+
+### Custom Extensions
+
+Allow users to:
+
+* Enter custom file names.
+* Specify custom file extensions.
+* Create files with extensions not listed in presets.
+
+Examples:
+
+* `index.html`
+* `app.js`
+* `custom.config`
+* `notes.md`
+* `anything.extension`
+
+---
+
+# 4. Shared Folder Breadcrumb Duplication
+
+## Current Problem
+
+When viewing shared folders, the last folder name appears twice in the breadcrumb/path display.
+
+### Example
+
+Instead of:
+
+FolderA / FolderB / FolderC
+
+It displays:
+
+FolderA / FolderB / FolderC / FolderC
+
+This duplication only affects the final folder.
+
+## Required Fix
+
+* Audit breadcrumb generation logic.
+* Remove duplicate path segments.
+* Ensure paths are generated consistently throughout shared folder views.
+
+---
+
+# 5. Folder Download Support
+
+## Current Problem
+
+Folders cannot be downloaded as a complete package.
+
+## Required Improvements
+
+### Standard Folders
+
+Users should be able to:
+
+* Download entire folders.
+* Automatically generate ZIP archives.
+* Receive the ZIP when packaging completes.
+
+### Shared Folders
+
+The same functionality should work for publicly shared folders.
+
+Expected behavior should be similar to Google Drive and Dropbox folder downloads.
+
+---
+
+# 6. File Preview System Overhaul
+
+## Current Problem
+
+File previews are inconsistent and not fully functional.
+
+## Required Improvements
+
+### Images
+
+* View images directly in-browser.
+* Fast loading.
+* Zoom support if possible.
+
+### Videos
+
+* Stream videos directly.
+* Do not preload entire video files.
+* Support range requests/chunked streaming.
+* Ensure long videos play smoothly without causing memory issues or browser crashes.
+
+### PDFs
+
+* Display PDFs directly in-browser.
+* Smooth page rendering.
+* Proper navigation controls.
+
+### General Goal
+
+The preview experience should feel responsive and production-ready.
+
+---
+
+# 7. Thumbnail Generation Improvements
+
+## Current Problem
+
+Only image thumbnails are properly represented.
+
+## Required Improvements
+
+### Video Thumbnails
+
+Generate preview thumbnails from video content when possible.
+
+### PDF Thumbnails
+
+Generate first-page preview thumbnails for PDFs when possible.
+
+### Image Thumbnails
+
+Maintain existing image thumbnail functionality.
+
+### Goal
+
+Users should visually identify files without opening them, similar to Google Drive.
+
+---
+
+# 8. Admin Sidebar Layout Bug
+
+## Current Problem
+
+The admin sidebar contains unused vertical space, but bottom navigation items extend below the viewport and require scrolling to access.
+
+## Required Fix
+
+* Analyze sidebar height calculations.
+* Fix layout distribution.
+* Ensure bottom items remain visible when sufficient space exists.
+* Remove unnecessary scrolling.
+* Verify responsiveness across multiple screen sizes and resolutions.
+
+---
+
+# Implementation Requirements
+
+1. First, perform a full audit of all issues above.
+2. Add all findings and fixes to the project's Improvements/Issues document.
+3. Prioritize these critical fixes before any future roadmap features.
+4. Implement the fixes immediately after documenting them.
+5. Verify every fix through testing and ensure no regressions are introduced.
+
+# Success Criteria
+
+After completion:
+
+* Password-protected shares work reliably.
+* Text files can be created, edited, and saved.
+* Additional file types are supported.
+* File creation UI looks modern and intuitive.
+* Shared folder breadcrumbs display correctly.
+* Entire folders can be downloaded as ZIP archives.
+* Shared folders support ZIP downloads.
+* Images, videos, and PDFs preview properly.
+* Video streaming works efficiently for large files.
+* Video/PDF thumbnails are generated where possible.
+* Admin sidebar layout issues are resolved.
+* The overall experience feels stable, polished, and production-ready.
